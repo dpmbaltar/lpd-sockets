@@ -29,11 +29,11 @@ void serve_echo(int connfd)
     for (n = 0;;n++) {
         // Leer mensaje del cliente y copiarlo al búfer
         memset(buff, 0, MAX_BUFF);
-        read(connfd, buff, sizeof(buff));
+        recv(connfd, buff, sizeof(buff), 0);
         printf("Mensaje recibido: %s", buff);
 
         // Enviar eco
-        write(connfd, buff, sizeof(buff));
+        send(connfd, buff, sizeof(buff), 0);
         printf("Mensaje enviado: %s", buff);
 
         // Salir del bucle si el cliente sale

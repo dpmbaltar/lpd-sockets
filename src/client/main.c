@@ -33,7 +33,7 @@ void client(int sockfd)
         while ((buff[len++] = getchar()) != '\n');
 
         // Enviar mensaje al servidor
-        write(sockfd, buff, sizeof(buff));
+        send(sockfd, buff, sizeof(buff), 0);
         printf("Mensaje enviado...\n");
 
         // Salir si se escribe el mensaje CMD_EXIT
@@ -44,7 +44,7 @@ void client(int sockfd)
 
         // Leer mensaje de respuesta del servidor al búfer
         memset(buff, 0, sizeof(buff));
-        read(sockfd, buff, sizeof(buff));
+        recv(sockfd, buff, sizeof(buff), 0);
         printf("Respuesta del servidor: %s\n", buff);
     }
 
