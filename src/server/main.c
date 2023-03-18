@@ -12,7 +12,6 @@
 #define MAX_CONN 10
 #define MAX_BUFF 255
 #define CMD_EXIT "salir"
-#define MSG_EXIT "Chau."
 
 /**
  * @brief Servidor eco (read()/write()).
@@ -37,10 +36,9 @@ void serve_echo(int connfd)
         write(connfd, buff, sizeof(buff));
         printf("Mensaje enviado: %s", buff);
 
-        // Enviar mensaje de despedida si el cliente envía el mensaje CMD_EXIT
+        // Salir del bucle si el cliente sale
         if ((strncmp(buff, CMD_EXIT, strlen(CMD_EXIT))) == 0) {
-            write(connfd, MSG_EXIT, strlen(MSG_EXIT)); // TODO: fix SIGPIPE
-            printf("Mensaje de despedida enviado...\n");
+            printf("El cliente ha salido.\n");
             break;
         }
     }
@@ -91,13 +89,15 @@ int main(int argc, char **argv)
     g_return_val_if_fail(listening == 0, EXIT_FAILURE);
     printf("Servidor escuchando...\n");
 
-    // Aceptar conexión de cliente
-    connfd = accept(sockfd, (struct sockaddr*)&cliaddr, (socklen_t*)&cliaddr_len);
-    g_return_val_if_fail(connfd != -1, EXIT_FAILURE);
-    printf("Conexión de cliente aceptada por el servidor...\n");
+    do {
+        // Aceptar conexión de cliente
+        connfd = accept(sockfd, (struct sockaddr*)&cliaddr, (socklen_t*)&cliaddr_len);
+        g_return_val_if_fail(connfd != -1, EXIT_FAILURE);
+        printf("Conexión de cliente aceptada por el servidor...\n");
 
-    // Ejecutar función del servidor
-    serve_echo(connfd);
+        // Ejecutar función del servidor
+        serve_echo(connfd);
+    } while (TRUE);
 
     // Cerrar socket
     close(sockfd);
