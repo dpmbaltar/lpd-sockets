@@ -70,8 +70,8 @@ int main(int argc, char **argv)
 {
     int sockfd, connfd, binded, listening, max_threads;
     struct sockaddr_in srvaddr, cliaddr;
-    size_t srvaddr_len = sizeof(srvaddr);
-    size_t cliaddr_len = sizeof(cliaddr);
+    socklen_t srvaddr_len = sizeof(srvaddr);
+    socklen_t cliaddr_len = sizeof(cliaddr);
 
     GError *error = NULL;
     GThreadPool *thread_pool;
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
 
     do {
         // Aceptar conexión de cliente
-        connfd = accept(sockfd, (struct sockaddr*)&cliaddr, (socklen_t*)&cliaddr_len);
+        connfd = accept(sockfd, (struct sockaddr*)&cliaddr, &cliaddr_len);
         g_return_val_if_fail(connfd != -1, EXIT_FAILURE);
         printf("Conexión de cliente aceptada por el servidor...\n");
 
