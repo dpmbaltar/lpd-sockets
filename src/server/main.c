@@ -99,7 +99,7 @@ int main(int argc, char **argv)
 
     // Crear thread pool
     max_threads = g_get_num_processors();
-    thread_pool = g_thread_pool_new(serve_echo, NULL, max_threads, TRUE, &error);
+    thread_pool = g_thread_pool_new(serve_echo, NULL, max_threads, FALSE, &error);
     if (error != NULL) {
         fprintf(stderr, "Error: %s\n", error->message);
         return EXIT_FAILURE;
