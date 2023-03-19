@@ -69,18 +69,18 @@ void serve_echo(gpointer data, gpointer user_data)
 int main(int argc, char **argv)
 {
     int sockfd, connfd, binded, listening, max_threads;
-    struct sockaddr_in servaddr, cliaddr;
-    size_t servaddr_len = sizeof(servaddr);
+    struct sockaddr_in srvaddr, cliaddr;
+    size_t srvaddr_len = sizeof(srvaddr);
     size_t cliaddr_len = sizeof(cliaddr);
 
     GError *error = NULL;
     GThreadPool *thread_pool;
 
     // Asignar IP y puerto
-    memset(&servaddr, 0, servaddr_len);
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servaddr.sin_port = htons(PORT);
+    memset(&srvaddr, 0, srvaddr_len);
+    srvaddr.sin_family = AF_INET;
+    srvaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    srvaddr.sin_port = htons(PORT);
 
     // Crear socket
     sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -88,7 +88,7 @@ int main(int argc, char **argv)
     printf("Socket creado correctamente...\n");
 
     // Enlazar socket creado a IP/puerto
-    binded = bind(sockfd, (struct sockaddr*)&servaddr, servaddr_len);
+    binded = bind(sockfd, (struct sockaddr*)&srvaddr, srvaddr_len);
     g_return_val_if_fail(binded == 0, EXIT_FAILURE);
     printf("Socket enlazado correctamente...\n");
 
