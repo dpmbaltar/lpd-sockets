@@ -14,17 +14,21 @@
 #define CMD_EXIT "salir"
 
 /**
- * @brief Servidor eco (read()/write()).
+ * @brief Servidor eco (lectura/escritura).
  *
  * Hace eco de los mensajes enviados por un cliente. Se cierra si recibe el
  * mensaje de salida definido en CMD_EXIT, por ejemplo, "salir".
  *
- * @param connfd resultado de accept()
+ * @param data (int) resultado de accept()
+ * @param user_data sin utilizar por ahora
  */
-void serve_echo(int connfd)
+void serve_echo(gpointer data, gpointer user_data)
 {
-    char buff[MAX_BUFF];
+    int connfd = GPOINTER_TO_INT(data);
+    g_return_if_fail(connfd != -1);
+
     int n;
+    char buff[MAX_BUFF];
 
     for (n = 0;;n++) {
         // Leer mensaje del cliente y copiarlo al búfer
@@ -43,6 +47,7 @@ void serve_echo(int connfd)
         }
     }
 
+    close(connfd);
     printf("Mensajes recibidos: %d\n", n);
 }
 
@@ -63,10 +68,13 @@ void serve_echo(int connfd)
  */
 int main(int argc, char **argv)
 {
-    int sockfd, connfd, binded, listening;
+    int sockfd, connfd, binded, listening, max_threads;
     struct sockaddr_in servaddr, cliaddr;
     size_t servaddr_len = sizeof(servaddr);
     size_t cliaddr_len = sizeof(cliaddr);
+
+    GError *error = NULL;
+    GThreadPool *thread_pool;
 
     // Asignar IP y puerto
     memset(&servaddr, 0, servaddr_len);
@@ -89,19 +97,30 @@ int main(int argc, char **argv)
     g_return_val_if_fail(listening == 0, EXIT_FAILURE);
     printf("Servidor escuchando...\n");
 
+    // Crear thread pool
+    max_threads = g_get_num_processors();
+    thread_pool = g_thread_pool_new(serve_echo, NULL, max_threads, TRUE, &error);
+    if (error != NULL) {
+        fprintf(stderr, "Error: %s\n", error->message);
+        return EXIT_FAILURE;
+    }
+
     do {
         // Aceptar conexión de cliente
         connfd = accept(sockfd, (struct sockaddr*)&cliaddr, (socklen_t*)&cliaddr_len);
         g_return_val_if_fail(connfd != -1, EXIT_FAILURE);
         printf("Conexión de cliente aceptada por el servidor...\n");
 
-        // Ejecutar función del servidor
-        serve_echo(connfd);
+        // Ejecutar función del servidor en otro hilo
+        g_thread_pool_push(thread_pool, GINT_TO_POINTER(connfd), &error);
+
     } while (TRUE);
 
     // Cerrar socket
     close(sockfd);
     printf("Servidor cerrado.\n");
+
+    g_thread_pool_free(thread_pool, FALSE, TRUE);
 
     return EXIT_SUCCESS;
 }
