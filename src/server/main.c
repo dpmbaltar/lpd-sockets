@@ -1,5 +1,4 @@
 #include <glib.h>
-#include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,8 +7,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define PORT 24000
-#define MAX_CONN 10
+#include "tcpserver.h"
+
 #define MAX_BUFF 255
 #define CMD_EXIT "salir"
 
@@ -68,59 +67,17 @@ void serve_echo(gpointer data, gpointer user_data)
  */
 int main(int argc, char **argv)
 {
-    int sockfd, connfd, binded, listening, max_threads;
-    struct sockaddr_in srvaddr, cliaddr;
-    socklen_t srvaddr_len = sizeof(srvaddr);
-    socklen_t cliaddr_len = sizeof(cliaddr);
+    GError *err = NULL;
+    TcpServer *srv = tcp_server_new(INADDR_ANY, 24000, serve_echo, NULL);
 
-    GError *error = NULL;
-    GThreadPool *thread_pool;
+    tcp_server_run(srv, &err);
 
-    // Asignar IP y puerto
-    memset(&srvaddr, 0, srvaddr_len);
-    srvaddr.sin_family = AF_INET;
-    srvaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    srvaddr.sin_port = htons(PORT);
-
-    // Crear socket
-    sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    g_return_val_if_fail(sockfd != -1, EXIT_FAILURE);
-    printf("Socket creado correctamente...\n");
-
-    // Enlazar socket creado a IP/puerto
-    binded = bind(sockfd, (struct sockaddr*)&srvaddr, srvaddr_len);
-    g_return_val_if_fail(binded == 0, EXIT_FAILURE);
-    printf("Socket enlazado correctamente...\n");
-
-    // Escuchar puerto
-    listening = listen(sockfd, MAX_CONN);
-    g_return_val_if_fail(listening == 0, EXIT_FAILURE);
-    printf("Servidor escuchando...\n");
-
-    // Crear thread pool
-    max_threads = g_get_num_processors();
-    thread_pool = g_thread_pool_new(serve_echo, NULL, max_threads, FALSE, &error);
-    if (error != NULL) {
-        fprintf(stderr, "Error: %s\n", error->message);
+    if (err != NULL) {
+        fprintf(stderr, "%s", err->message);
         return EXIT_FAILURE;
     }
 
-    do {
-        // Aceptar conexión de cliente
-        connfd = accept(sockfd, (struct sockaddr*)&cliaddr, &cliaddr_len);
-        g_return_val_if_fail(connfd != -1, EXIT_FAILURE);
-        printf("Conexión de cliente aceptada por el servidor...\n");
-
-        // Ejecutar función del servidor en otro hilo
-        g_thread_pool_push(thread_pool, GINT_TO_POINTER(connfd), &error);
-
-    } while (TRUE);
-
-    // Cerrar socket
-    close(sockfd);
-    printf("Servidor cerrado.\n");
-
-    g_thread_pool_free(thread_pool, FALSE, TRUE);
+    tcp_server_free(srv);
 
     return EXIT_SUCCESS;
 }
