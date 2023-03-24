@@ -66,6 +66,7 @@ TcpServer *tcp_server_new_full(in_addr_t addr,
 
   if (err != NULL) {
     fprintf(stderr, "%s\n", err->message);
+    g_error_free(err);
     return NULL;
   }
 
