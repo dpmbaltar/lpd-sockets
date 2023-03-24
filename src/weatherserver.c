@@ -44,7 +44,7 @@ static in_port_t port = SRV_PORT;
 /* Opciones de línea de comandos */
 static GOptionEntry options[] =
 {
-  { "addr", 'a', 0, G_OPTION_ARG_INT, &addr, "Dirección (0 = INADDR_ANY)", "A" },
+  { "addr", 'a', 0, G_OPTION_ARG_INT, &addr, "Direccion (0 = INADDR_ANY)", "A" },
   { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Puerto (> 1024)", "P" },
   { NULL }
 };
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
   }
 
   if (port <= 1024) {
-    fprintf(stderr, "El puerto debe ser > 1024\n");
+    fprintf(stderr, "El puerto debe ser mayor a 1024\n");
     return EXIT_FAILURE;
   }
 
