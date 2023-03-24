@@ -1,5 +1,4 @@
-#ifndef TCPSERVER_H
-#define TCPSERVER_H
+#pragma once
 
 #include <glib.h>
 #include <stdbool.h>
@@ -37,5 +36,3 @@ void            tcp_server_run          (TcpServer  *server,
 void            tcp_server_free         (TcpServer  *server);
 
 GQuark          tcp_server_error_quark  (void);
-
-#endif
