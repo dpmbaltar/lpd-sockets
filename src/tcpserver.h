@@ -2,7 +2,6 @@
 
 #include <glib.h>
 #include <stdbool.h>
-#include <stdint.h>
 
 #define TCP_SERVER_ERROR (tcp_server_error_quark())
 
@@ -17,13 +16,13 @@ typedef enum _TcpServerError
 
 typedef struct _TcpServer TcpServer;
 
-TcpServer      *tcp_server_new          (uint32_t    addr,
-                                         uint16_t    port,
+TcpServer      *tcp_server_new          (in_addr_t   addr,
+                                         in_port_t   port,
                                          GFunc       func,
                                          gpointer    data);
 
-TcpServer      *tcp_server_new_full     (uint32_t    addr,
-                                         uint16_t    port,
+TcpServer      *tcp_server_new_full     (in_addr_t   addr,
+                                         in_port_t   port,
                                          GFunc       func,
                                          gpointer    data,
                                          int         max_conn,
