@@ -20,7 +20,9 @@
 #include "tcpserver.h"
 #include "weather.h"
 
+/* Dirección por defecto */
 #define SRV_ADDR           INADDR_ANY
+/* Puerto por defecto */
 #define SRV_PORT           24001
 #define SRV_SEND_BUFF_SIZE 160
 #define SRV_RECV_BUFF_SIZE 20
@@ -32,6 +34,20 @@
  * información para dentro de 3 días a partir de hoy.
  */
 #define SRV_CMD_INFO       "info"
+
+/* Dirección del servidor */
+static in_addr_t addr = SRV_ADDR;
+
+/* Puerto del servidor */
+static in_port_t port = SRV_PORT;
+
+/* Opciones de línea de comandos */
+static GOptionEntry options[] =
+{
+  { "addr", 'a', 0, G_OPTION_ARG_INT, &addr, "Dirección (0 = INADDR_ANY)", "A" },
+  { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Puerto (> 1024)", "P" },
+  { NULL }
+};
 
 /* Cache del clima */
 static WeatherInfo weather_cache[WEATHER_MAX_DAYS] = { 0 };
@@ -101,17 +117,33 @@ static void serve_weather(gpointer data, gpointer user_data)
 
 int main(int argc, char **argv)
 {
-  GError    *err = NULL;
-  TcpServer *srv = tcp_server_new(SRV_ADDR, SRV_PORT, serve_weather, NULL);
+  GError         *error = NULL;
+  GOptionContext *context;
+  TcpServer      *server;
 
-  tcp_server_run(srv, &err);
+  context = g_option_context_new ("- Servidor del clima");
+  g_option_context_add_main_entries(context, options, NULL);
 
-  if (err != NULL) {
-    fprintf(stderr, "%s", err->message);
+  if (!g_option_context_parse(context, &argc, &argv, &error)) {
+    fprintf(stderr, "%s\n", error->message);
     return EXIT_FAILURE;
   }
 
-  tcp_server_free(srv);
+  if (port <= 1024) {
+    fprintf(stderr, "El puerto debe ser > 1024\n");
+    return EXIT_FAILURE;
+  }
+
+  server = tcp_server_new(addr, port, serve_weather, NULL);
+  tcp_server_run(server, &error);
+
+  if (error != NULL) {
+    fprintf(stderr, "%s", error->message);
+    return EXIT_FAILURE;
+  }
+
+  tcp_server_free(server);
+  g_option_context_free(context);
 
   return EXIT_SUCCESS;
 }
