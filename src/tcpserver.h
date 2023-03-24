@@ -3,6 +3,18 @@
 #include <glib.h>
 #include <stdbool.h>
 
+#ifdef G_OS_UNIX
+#include <netinet/in.h>
+#endif
+
+#ifdef G_OS_WIN32
+#include <stdint.h>
+#include <winsock2.h>
+
+typedef uint32_t in_addr_t;
+typedef uint16_t in_port_t;
+#endif
+
 #define TCP_SERVER_ERROR (tcp_server_error_quark())
 
 /* Códigos de error de TcpServer */

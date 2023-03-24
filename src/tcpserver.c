@@ -1,13 +1,21 @@
 #include <glib.h>
-#include <netdb.h>
-#include <netinet/in.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+#ifdef G_OS_UNIX
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#endif
+
+#ifdef G_OS_WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#endif
 
 #include "tcpserver.h"
 
@@ -93,6 +101,19 @@ void tcp_server_run(TcpServer  *srv,
   socklen_t cliaddr_len = sizeof(cliaddr);
   GError *local_err = NULL;
 
+#ifdef G_OS_WIN32
+  /**
+   * Inicializar Winsock
+   * https://learn.microsoft.com/es-es/windows/win32/winsock/initializing-winsock
+   */
+  WSADATA wsa_data;
+  int result = WSAStartup(MAKEWORD(2,2), &wsa_data);
+  if (result != 0) {
+    printf("WSAStartup failed: %d\n", result);
+    return;
+  }
+#endif
+
   /* Asignar IP y puerto */
   memset(&srvaddr, 0, srvaddr_len);
   srvaddr.sin_family = AF_INET;
@@ -130,9 +151,16 @@ void tcp_server_run(TcpServer  *srv,
 
   } while (TRUE);
 
-  /* Cerrar socket */
+#ifdef G_OS_UNIX
   close(sockfd);
-  printf("Servidor cerrado.\n");
+#endif
+
+#ifdef G_OS_WIN32
+  closesocket(sockfd);
+  WSACleanup();
+#endif
+
+  printf("Servidor desconectado.\n");
 }
 
 void tcp_server_free(TcpServer *srv)
