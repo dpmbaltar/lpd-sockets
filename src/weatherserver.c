@@ -20,20 +20,23 @@
 #include "tcpserver.h"
 #include "weather.h"
 
-/* Dirección por defecto */
-#define SRV_ADDR           INADDR_ANY
-/* Puerto por defecto */
-#define SRV_PORT           24001
-#define SRV_SEND_BUFF_SIZE 160
-#define SRV_RECV_BUFF_SIZE 20
-/* TTL del clima */
-#define SRV_WEATHER_TTL    3600
+/* Descripción del servidor */
+#define SRV_INFO     "- Servidor del clima"
+/* Dirección del servidor por defecto */
+#define SRV_ADDR     INADDR_ANY
+/* Puerto del servidor por defecto */
+#define SRV_PORT     24001
+/* Cantidad máxima para envío de bytes */
+#define SRV_SEND_MAX 20
+/* Cantidad máxima para recepción de bytes */
+#define SRV_RECV_MAX 20
+/* TTL para datos del clima (segundos) */
+#define SRV_DATA_TTL 3600
 
-/**
- * Comando para enviar info del clima para un día. Por ejemplo: info 3 devuelve
- * información para dentro de 3 días a partir de hoy.
- */
-#define SRV_CMD_INFO       "info"
+/* Token de solicitud de datos. Ejemplo: get 0 = datos del día de hoy */
+#define TOK_GET    "get"
+/* Token de respuesta de error de solicitud */
+#define TOK_ERROR  "error"
 
 /* Dirección del servidor */
 static in_addr_t addr = SRV_ADDR;
@@ -42,18 +45,18 @@ static in_addr_t addr = SRV_ADDR;
 static in_port_t port = SRV_PORT;
 
 /* Opciones de línea de comandos */
-static GOptionEntry options[] =
+static GOptionEntry server_options[] =
 {
-  { "addr", 'a', 0, G_OPTION_ARG_INT, &addr, "Direccion (0 = INADDR_ANY)", "A" },
-  { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Puerto (> 1024)", "P" },
+  { "addr", 'a', 0, G_OPTION_ARG_INT, &addr, "Direccion (0=INADDR_ANY)", "A" },
+  { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Puerto (>1024)", "P" },
   { NULL }
 };
 
 /* Cache del clima */
-static WeatherInfo weather_cache[WEATHER_MAX_DAYS] = { 0 };
+static WeatherInfo weather_data[WEATHER_MAX_DAYS] = { 0 };
 
 /* Cache timestamps */
-static time_t weather_cache_ts[WEATHER_MAX_DAYS] = { 0 };
+static time_t weather_cache[WEATHER_MAX_DAYS] = { 0 };
 
 static void get_weather(WeatherInfo *weather_info, int day)
 {
@@ -63,12 +66,28 @@ static void get_weather(WeatherInfo *weather_info, int day)
   struct timeval ts;
   gettimeofday(&ts, NULL);
 
-  if ((ts.tv_sec - weather_cache_ts[day]) > SRV_WEATHER_TTL) {
-    weather_get_info(&weather_cache[day], day);
-    weather_cache_ts[day] = ts.tv_sec;
+  if ((ts.tv_sec - weather_cache[day]) > SRV_DATA_TTL) {
+    weather_get_info(&weather_data[day], day);
+    weather_cache[day] = ts.tv_sec;
   }
 
-  memcpy(weather_info, &weather_cache[day], sizeof(weather_cache[day]));
+  memcpy(weather_info, &weather_data[day], sizeof(weather_data[day]));
+}
+
+static char **get_client_args(const char *str, unsigned int len)
+{
+  g_return_val_if_fail(str != NULL, NULL);
+  g_return_val_if_fail(len != 0, NULL);
+
+  GStrv tokens = NULL;
+  char tokens_str[len+1];
+
+  /* Forzar cadena con null byte al final */
+  tokens_str[len] = 0;
+  memcpy(tokens_str, str, len);
+  tokens = g_str_tokenize_and_fold(tokens_str, NULL, NULL);
+
+  return tokens;
 }
 
 static void serve_weather(gpointer data, gpointer user_data)
@@ -76,41 +95,54 @@ static void serve_weather(gpointer data, gpointer user_data)
   int connfd = GPOINTER_TO_INT(data);
   g_return_if_fail(connfd != -1);
 
-  int weather_day = 0;
-  char recv_buff[SRV_RECV_BUFF_SIZE];
-  char send_buff[SRV_SEND_BUFF_SIZE];
+  int weather_day = -1;
+  char **client_args;
+  char recv_buff[SRV_RECV_MAX];
+  char send_buff[SRV_SEND_MAX];
 
-  /* Leer instrucción del cliente */
   memset(recv_buff, 0, sizeof(recv_buff));
+  memset(send_buff, 0, sizeof(send_buff));
+
+  /* Leer solicitud del cliente */
   recv(connfd, recv_buff, sizeof(recv_buff), 0);
   printf("Mensaje recibido: %s", recv_buff);
+  printf("Bytes recibidos:\n");
+  for (int i = 0; i < (int)sizeof(recv_buff); i++)
+    printf("%02x ", (unsigned char)recv_buff[i]);
+  printf("\n");
 
-  /* Analizar mensaje recibido del cliente */
-  if ((strncmp(recv_buff, SRV_CMD_INFO, strlen(SRV_CMD_INFO))) == 0) {
-    //TODO: analizar comandos enviados por el cliente
-    printf("Tokens:\n");
-    GStrv tokens = g_str_tokenize_and_fold(recv_buff, NULL, NULL);
-    if (tokens != NULL) {
-      int tokens_len = g_strv_length(tokens);
-      for (int i = 0; i < tokens_len; i++)
-        printf("%s\n", tokens[i]);
-      g_strfreev(tokens);
+  /* Analizar el dato recibido del cliente */
+  client_args = get_client_args(recv_buff, sizeof(recv_buff));
+  if (client_args != NULL && g_strv_length(client_args) >= 2) {
+    if (strcmp(client_args[0], TOK_GET) == 0) {
+      weather_day = atoi(client_args[1]);
+      if (weather_day < WEATHER_MIN_DAYS || weather_day > WEATHER_MAX_DAYS) {
+        weather_day = -1;
+      }
     }
   }
+  g_strfreev(client_args);
 
-  /* Preparar datos del clima */
-  WeatherInfo weather_info = WEATHER_INFO_INIT;
-  get_weather(&weather_info, weather_day);
-  memset(send_buff, 0, sizeof(send_buff));
-  memcpy(send_buff, &weather_info, sizeof(weather_info));
+  /* Preparar datos para el envío */
+  if (weather_day != -1) {
+    WeatherInfo weather = WEATHER_INFO_INIT;
+    get_weather(&weather, weather_day);
+    memcpy(send_buff, &weather, sizeof(weather));
+    printf("Mensaje enviado: {%s, %d, %.1f}\n", weather.date, weather.cond,
+           weather.temp);
+  } else {
+    memcpy(send_buff, TOK_ERROR, sizeof(TOK_ERROR));
+    printf("Mensaje enviado: %s\n", send_buff);
+  }
 
-  /* Enviar datos del clima */
+  /* Enviar datos al cliente */
   send(connfd, send_buff, sizeof(send_buff), 0);
-  printf("Datos enviados: {%s, %d, %.1f}\n",
-         weather_info.date,
-         weather_info.cond,
-         weather_info.temp);
+  printf("Bytes enviados:\n");
+  for (int i = 0; i < (int)sizeof(send_buff); i++)
+    printf("%02x ", (unsigned char)send_buff[i]);
+  printf("\n");
 
+  /* Cerrar conexión */
   close(connfd);
   printf("Desconectado del cliente.\n");
 }
@@ -121,8 +153,8 @@ int main(int argc, char **argv)
   GOptionContext *context;
   TcpServer      *server;
 
-  context = g_option_context_new ("- Servidor del clima");
-  g_option_context_add_main_entries(context, options, NULL);
+  context = g_option_context_new(SRV_INFO);
+  g_option_context_add_main_entries(context, server_options, NULL);
 
   if (!g_option_context_parse(context, &argc, &argv, &error)) {
     fprintf(stderr, "%s\n", error->message);
