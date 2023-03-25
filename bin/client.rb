@@ -40,14 +40,18 @@ WeatherInfo = Struct.new :date, :temp, :cond do
   end
 end
 
+# Ejecutar loop hasta que el usuario escriba "salir"
 begin
+  # Abrir conexión
   socket = TCPSocket.new options.addr, options.port
 
+  # Solicitar datos a enviar al usuario
   puts 'Escribir mensaje:'
   message = gets.chomp.strip
   socket.puts message
   puts 'Mensaje enviado.'
 
+  # Mostrar bytes recibidos
   puts 'Bytes recibidos:'
   response = socket.recv WeatherInfo.size
   response.each_byte do |b|
@@ -55,6 +59,7 @@ begin
   end
   puts
 
+  # Leer bytes en struct WeatherInfo, si hay suficientes datos
   if response.bytesize >= WeatherInfo.size then
     weather_info = WeatherInfo.new.unpack response
     puts 'Datos del clima recibidos:'
@@ -63,6 +68,7 @@ begin
     puts '  Temperatura: %.1f' % weather_info.temp
   end
 
+  # Cerrar conexión
   socket.close
   puts 'Conexión cerrada.'
 
