@@ -1,11 +1,19 @@
 #include <glib.h>
-#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+#ifdef G_OS_UNIX
+#include <netinet/in.h>
+#include <sys/socket.h>
+#endif
+
+#ifdef G_OS_WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#endif
 
 #include "tcpserver.h"
 
@@ -23,31 +31,31 @@
  */
 void serve_echo(gpointer data, gpointer user_data)
 {
-    int connfd = GPOINTER_TO_INT(data);
-    g_return_if_fail(connfd != -1);
+  int connfd = GPOINTER_TO_INT(data);
+  g_return_if_fail(connfd != -1);
 
-    int n;
-    char buff[MAX_BUFF];
+  int n;
+  char buff[MAX_BUFF];
 
-    for (n = 0;;n++) {
-        // Leer mensaje del cliente y copiarlo al búfer
-        memset(buff, 0, MAX_BUFF);
-        recv(connfd, buff, sizeof(buff), 0);
-        printf("Mensaje recibido: %s", buff);
+  for (n = 0;;n++) {
+    // Leer mensaje del cliente y copiarlo al búfer
+    memset(buff, 0, MAX_BUFF);
+    recv(connfd, buff, sizeof(buff), 0);
+    printf("Mensaje recibido: %s", buff);
 
-        // Enviar eco
-        send(connfd, buff, sizeof(buff), 0);
-        printf("Mensaje enviado: %s", buff);
+    // Enviar eco
+    send(connfd, buff, sizeof(buff), 0);
+    printf("Mensaje enviado: %s", buff);
 
-        // Salir del bucle si el cliente sale
-        if ((strncmp(buff, CMD_EXIT, strlen(CMD_EXIT))) == 0) {
-            printf("El cliente ha salido.\n");
-            break;
-        }
+    // Salir del bucle si el cliente sale
+    if ((strncmp(buff, CMD_EXIT, strlen(CMD_EXIT))) == 0) {
+        printf("El cliente ha salido.\n");
+        break;
     }
+  }
 
-    close(connfd);
-    printf("Mensajes recibidos: %d\n", n);
+  close(connfd);
+  printf("Mensajes recibidos: %d\n", n);
 }
 
 /**
@@ -67,17 +75,17 @@ void serve_echo(gpointer data, gpointer user_data)
  */
 int main(int argc, char **argv)
 {
-    GError *err = NULL;
-    TcpServer *srv = tcp_server_new(INADDR_ANY, 24000, serve_echo, NULL);
+  GError *err = NULL;
+  TcpServer *srv = tcp_server_new(INADDR_ANY, 24000, serve_echo, NULL);
 
-    tcp_server_run(srv, &err);
+  tcp_server_run(srv, &err);
 
-    if (err != NULL) {
-        fprintf(stderr, "%s", err->message);
-        return EXIT_FAILURE;
-    }
+  if (err != NULL) {
+    fprintf(stderr, "%s", err->message);
+    return EXIT_FAILURE;
+  }
 
-    tcp_server_free(srv);
+  tcp_server_free(srv);
 
-    return EXIT_SUCCESS;
+  return EXIT_SUCCESS;
 }
