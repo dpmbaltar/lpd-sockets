@@ -1,7 +1,21 @@
 #!/usr/bin/env ruby
 
+require 'optparse'
+require 'ostruct'
 require 'socket'
 
+# Opciones de línea de comandos
+options = OpenStruct.new
+options.addr = "localhost"
+options.port = 24000
+
+# Obtener opciones
+OptionParser.new do |opt|
+  opt.on('-a', '--addr ADDR', 'Dirección') { |o| options.addr = o }
+  opt.on('-p', '--port PORT', 'Puerto') { |o| options.port = o.to_i }
+end.parse!
+
+# Estructura de datos del clima
 WeatherInfo = Struct.new :date, :temp, :cond do
   attr_accessor :date, :temp, :cond
   def self.size
@@ -27,7 +41,7 @@ WeatherInfo = Struct.new :date, :temp, :cond do
 end
 
 begin
-  socket = TCPSocket.new "127.0.0.1", 24001
+  socket = TCPSocket.new options.addr, options.port
 
   puts "Escribir mensaje:"
   message = gets.chomp.strip
