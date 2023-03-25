@@ -10,9 +10,13 @@ options.addr = 'localhost'
 options.port = 24000
 
 # Obtener opciones
-OptionParser.new do |opt|
-  opt.on('-a', '--addr ADDR', 'Dirección') { |o| options.addr = o }
-  opt.on('-p', '--port PORT', 'Puerto') { |o| options.port = o.to_i }
+OptionParser.new do |arg|
+  arg.on '-a', '--addr ADDR', 'Dirección (i.e. -a localhost)' do |val|
+    options.addr = val
+  end
+  arg.on '-p', '--port PORT', 'Puerto (i.e. -p 24000)' do |val|
+    options.port = val.to_i
+  end
 end.parse!
 
 # Estructura de datos del clima
