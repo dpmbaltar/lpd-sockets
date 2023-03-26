@@ -52,7 +52,19 @@ begin
   # Solicitar datos a enviar al usuario
   puts 'Escribir mensaje:'
   message = gets.chomp.strip
-  socket.puts message
+
+  # Manejar fechas para el servidor del clima
+  if message.match? /[0-9]{4}-[0-9]{2}-[0-9]{2}/ then
+    parts = message.split('-').map { |s| s.to_i }
+    message = [
+      parts[0,1].pack('S'),
+      parts[1,1].pack('C'),
+      parts[2,1].pack('C')
+    ].join
+  end
+
+  # Enviar datos
+  socket.send message, 0
   puts 'Mensaje enviado.'
 
   # Mostrar bytes enviados
