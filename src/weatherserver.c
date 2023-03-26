@@ -45,7 +45,7 @@ static in_addr_t addr = SRV_ADDR;
 static in_port_t port = SRV_PORT;
 
 /* Opciones de línea de comandos */
-static GOptionEntry server_options[] =
+static GOptionEntry options[] =
 {
   { "addr", 'a', 0, G_OPTION_ARG_INT, &addr, "Direccion (0=INADDR_ANY)", "A" },
   { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Puerto (>1024)", "P" },
@@ -154,7 +154,7 @@ int main(int argc, char **argv)
   TcpServer      *server;
 
   context = g_option_context_new(SRV_INFO);
-  g_option_context_add_main_entries(context, server_options, NULL);
+  g_option_context_add_main_entries(context, options, NULL);
 
   if (!g_option_context_parse(context, &argc, &argv, &error)) {
     fprintf(stderr, "%s\n", error->message);
