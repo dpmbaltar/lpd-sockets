@@ -102,7 +102,7 @@ int main(int argc, char **argv)
 {
   GError         *error = NULL;
   GOptionContext *context;
-  TcpServer      *server = tcp_server_new(SRV_ADDR, SRV_PORT, serve_echo, NULL);
+  TcpServer      *server = tcp_server_new(addr, port, serve_echo, NULL);
 
   context = g_option_context_new(SRV_INFO);
   g_option_context_add_main_entries(context, options, NULL);
