@@ -1,5 +1,6 @@
 #include <glib.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,16 +28,19 @@
 /* Puerto del servidor por defecto */
 #define SRV_PORT     24001
 /* Cantidad máxima para envío de bytes */
-#define SRV_SEND_MAX 20
+#define SRV_SEND_MAX 16
 /* Cantidad máxima para recepción de bytes */
-#define SRV_RECV_MAX 20
+#define SRV_RECV_MAX 4
 /* TTL para datos del clima (segundos) */
 #define SRV_DATA_TTL 3600
 
-/* Token de solicitud de datos. Ejemplo: get 0 = datos del día de hoy */
-#define TOK_GET      "get"
-/* Token de respuesta de error de solicitud */
-#define TOK_ERROR    "error"
+/* Tipo de datos para recepción de fechas del cliente */
+typedef struct
+{
+  uint16_t year;
+  uint8_t  month;
+  uint8_t  day;
+} Date;
 
 /* Dirección del servidor */
 static in_addr_t addr = SRV_ADDR;
@@ -78,20 +82,36 @@ static void get_weather(WeatherInfo *weather_info, int day)
   g_mutex_unlock(&mutex);
 }
 
-static char **get_client_args(const char *str, unsigned int len)
+static int get_client_arg(const char *str, unsigned int len)
 {
-  g_return_val_if_fail(str != NULL, NULL);
-  g_return_val_if_fail(len != 0, NULL);
+  int day = -1;
+  Date date = { 0, 0, 0 };
+  GDateTime *dt_arg;
+  GDateTime *dt_now;
+  GDateTime *dt_today;
+  GTimeSpan dt_diff = 0;
 
-  GStrv tokens = NULL;
-  char tokens_str[len+1];
+  g_return_val_if_fail(str != NULL, day);
+  g_return_val_if_fail(len != 0 || len < sizeof(Date), day);
 
-  /* Forzar cadena con byte nulo (0x00) al final */
-  tokens_str[len] = 0;
-  memcpy(tokens_str, str, len);
-  tokens = g_str_tokenize_and_fold(tokens_str, NULL, NULL);
+  memcpy(&date, str, sizeof(Date));
+  dt_arg = g_date_time_new_local(date.year, date.month, date.day, 0, 0, 0);
 
-  return tokens;
+  if (dt_arg != NULL) {
+    dt_now = g_date_time_new_now_local();
+    dt_today = g_date_time_new_local(g_date_time_get_year(dt_now),
+                                     g_date_time_get_month(dt_now),
+                                     g_date_time_get_day_of_month(dt_now),
+                                     0, 0, 0);
+    dt_diff = g_date_time_difference(dt_arg, dt_today);
+    day = dt_diff / G_TIME_SPAN_DAY;
+
+    g_date_time_unref(dt_arg);
+    g_date_time_unref(dt_now);
+    g_date_time_unref(dt_today);
+  }
+
+  return day;
 }
 
 static void serve_weather(gpointer data, gpointer user_data)
@@ -100,7 +120,6 @@ static void serve_weather(gpointer data, gpointer user_data)
   g_return_if_fail(connfd != -1);
 
   int weather_day = -1;
-  char **client_args;
   char recv_buff[SRV_RECV_MAX];
   char send_buff[SRV_SEND_MAX];
 
@@ -116,16 +135,7 @@ static void serve_weather(gpointer data, gpointer user_data)
   printf("\n");
 
   /* Analizar datos recibidos */
-  client_args = get_client_args(recv_buff, sizeof(recv_buff));
-  if (client_args != NULL && g_strv_length(client_args) >= 2) {
-    if (strcmp(client_args[0], TOK_GET) == 0) {
-      weather_day = atoi(client_args[1]);
-      if (weather_day < WEATHER_MIN_DAYS || weather_day > WEATHER_MAX_DAYS) {
-        weather_day = -1;
-      }
-    }
-  }
-  g_strfreev(client_args);
+  weather_day = get_client_arg(recv_buff, (int)sizeof(recv_buff));
 
   /* Preparar datos para el envío */
   if (weather_day != -1) {
@@ -134,9 +144,6 @@ static void serve_weather(gpointer data, gpointer user_data)
     memcpy(send_buff, &weather, sizeof(weather));
     printf("Mensaje enviado: {%s, %d, %.1f}\n", weather.date, weather.cond,
            weather.temp);
-  } else {
-    memcpy(send_buff, TOK_ERROR, sizeof(TOK_ERROR));
-    printf("Mensaje enviado: %s\n", send_buff);
   }
 
   /* Enviar datos al cliente */
