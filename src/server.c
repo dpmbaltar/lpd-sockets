@@ -69,13 +69,12 @@ static GOptionEntry options[] =
 /* Cliente para el servidor del clima */
 static TcpClient *weather_client = NULL;
 
-static void get_weather(gpointer _sockfd, gpointer _request)
+static void *get_weather(int sockfd, gpointer _request)
 {
-  int sockfd = GPOINTER_TO_INT(_sockfd);
   Request *request = (Request*)_request;
 
-  g_return_if_fail(sockfd != -1);
-  g_return_if_fail(request != NULL);
+  g_return_val_if_fail(sockfd != -1, NULL);
+  g_return_val_if_fail(request != NULL, NULL);
 
   char recv_buf[request->recv_len];
 
@@ -85,7 +84,8 @@ static void get_weather(gpointer _sockfd, gpointer _request)
   printf("Recibir mensaje del servidor del clima.\n");
   recv(sockfd, recv_buf, request->recv_len, 0);
   memcpy(request->recv, recv_buf, request->recv_len);
-  close(sockfd);
+
+  return NULL;
 }
 
 void serve(gpointer data, gpointer user_data)
@@ -94,9 +94,10 @@ void serve(gpointer data, gpointer user_data)
   g_return_if_fail(connfd != -1);
 
   GError *error = NULL;
+  GThread *weather_thread = NULL;
   Date date = DATE_INIT;
   WeatherInfo weather = WEATHER_INFO_INIT;
-  Request request = REQUEST_INIT;
+  Request req = REQUEST_INIT;
   int recv_len = 0;
   char recv_buf[SRV_RECV_MAX];
   char send_buf[SRV_SEND_MAX];
@@ -114,18 +115,22 @@ void serve(gpointer data, gpointer user_data)
     printf("\n");
 
     /* Solicitar datos del clima */
-    request.send = &date;
-    request.recv = &weather;
-    request.send_len = sizeof(date);
-    request.recv_len = sizeof(weather);
-    tcp_client_run(weather_client, &request, &error);
-    memcpy(send_buf, &weather, sizeof(weather));
+    req.send = &date;
+    req.recv = &weather;
+    req.send_len = sizeof(date);
+    req.recv_len = sizeof(weather);
+    weather_thread = tcp_client_run(weather_client, get_weather, &req, &error);
 
-    printf("Datos del clima recibidos: {%s, %d, %.1f}\n",
-         weather.date, weather.cond, weather.temp);
+    if (weather_thread != NULL) {
+      g_thread_join(weather_thread);
+      g_thread_unref(weather_thread);
+      memcpy(send_buf, &weather, sizeof(weather));
+      printf("Datos del clima recibidos: {%s, %d, %.1f}\n",
+             weather.date, weather.cond, weather.temp);
 
-    /* Enviar datos obtenidos al cliente */
-    send(connfd, send_buf, sizeof(send_buf), 0);
+      /* Enviar datos obtenidos al cliente */
+      send(connfd, send_buf, sizeof(send_buf), 0);
+    }
   }
 
   close(connfd);
@@ -169,7 +174,7 @@ int main(int argc, char **argv)
     max_threads = g_get_num_processors();
   }
 
-  weather_client = tcp_client_new(addr, 24001, get_weather, NULL);
+  weather_client = tcp_client_new(addr, 24001);
   server = tcp_server_new_full(addr, port, serve, NULL, max_conn, max_threads,
                                exclusive);
   tcp_server_run(server, &error);
