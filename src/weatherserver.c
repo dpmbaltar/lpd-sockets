@@ -20,6 +20,7 @@
 
 #include "tcpserver.h"
 #include "weather.h"
+#include "util.h"
 
 /* Descripción del servidor */
 #define SRV_INFO     "- Servidor del clima"
@@ -33,14 +34,6 @@
 #define SRV_RECV_MAX 4
 /* TTL para datos del clima (segundos) */
 #define SRV_DATA_TTL 3600
-
-/* Tipo de datos para recepción de fechas del cliente */
-typedef struct
-{
-  uint16_t year;
-  uint8_t  month;
-  uint8_t  day;
-} Date;
 
 /* Dirección del servidor */
 static in_addr_t addr = SRV_ADDR;
@@ -85,7 +78,7 @@ static void get_weather(WeatherInfo *weather_info, int day)
 static int get_client_arg(const char *str, unsigned int len)
 {
   int day = -1;
-  Date date = { 0, 0, 0 };
+  Date date = DATE_INIT;
   GDateTime *dt_arg;
   GDateTime *dt_now;
   GDateTime *dt_today;
