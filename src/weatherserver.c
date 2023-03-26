@@ -22,7 +22,9 @@
 #include "weather.h"
 #include "util.h"
 
-/* Descripción del servidor */
+/* Nombre del servidor */
+#define SRV_NAME     "Servidor del clima"
+/* Descripción del programa */
 #define SRV_INFO     "- Servidor del clima"
 /* Dirección del servidor por defecto */
 #define SRV_ADDR     INADDR_ANY
@@ -165,6 +167,7 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  printf("Iniciando %s...\n", SRV_NAME);
   server = tcp_server_new(addr, port, serve_weather, NULL);
   tcp_server_run(server, &error);
 
