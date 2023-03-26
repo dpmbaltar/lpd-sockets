@@ -60,11 +60,14 @@ static time_t weather_cache[WEATHER_MAX_DAYS] = { 0 };
 
 static void get_weather(WeatherInfo *weather_info, int day)
 {
+  static GMutex mutex;
+  struct timeval ts;
+
   g_return_if_fail(weather_info != NULL);
   g_return_if_fail(day >= WEATHER_MIN_DAYS && day <= WEATHER_MAX_DAYS);
 
-  struct timeval ts;
   gettimeofday(&ts, NULL);
+  g_mutex_lock(&mutex);
 
   if ((ts.tv_sec - weather_cache[day]) > SRV_DATA_TTL) {
     weather_get_info(&weather_data[day], day);
@@ -72,6 +75,7 @@ static void get_weather(WeatherInfo *weather_info, int day)
   }
 
   memcpy(weather_info, &weather_data[day], sizeof(weather_data[day]));
+  g_mutex_unlock(&mutex);
 }
 
 static char **get_client_args(const char *str, unsigned int len)
