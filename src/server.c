@@ -45,6 +45,9 @@ static in_addr_t addr = SRV_ADDR;
 /* Puerto del servidor */
 static in_port_t port = SRV_PORT;
 
+/* Puerto del servidor */
+static in_port_t weather_port = SRV_WEATHER_PORT;
+
 /* Máximo de conexiones */
 static int max_conn = SRV_MAX_CONN;
 
@@ -59,8 +62,9 @@ static GOptionEntry options[] =
 {
   { "addr", 'a', 0, G_OPTION_ARG_INT, &addr, "Usar direccion A (0 = INADDR_ANY por defecto)", "A" },
   { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Enlazar al puerto P > 1024 (24000 por defecto)", "P" },
-  { "max_conn", 'c', 0, G_OPTION_ARG_INT, &max_conn, "Aceptar hasta C conexiones (10 por defecto)", "C" },
-  { "max_threads", 't', 0, G_OPTION_ARG_INT, &max_threads, "Usar hasta T hilos o -1 sin limites (usar cantidad de procesadores por defecto)", "T" },
+  { "weather-port", 'w', 0, G_OPTION_ARG_INT, &weather_port, "Conectarse al puerto W > 1024 (24001 por defecto)", "W" },
+  { "max-conn", 'c', 0, G_OPTION_ARG_INT, &max_conn, "Aceptar hasta C conexiones (10 por defecto)", "C" },
+  { "max-threads", 't', 0, G_OPTION_ARG_INT, &max_threads, "Usar hasta T hilos o -1 sin limites (usar cantidad de procesadores por defecto)", "T" },
   { "exclusive", 'e', 0, G_OPTION_ARG_NONE, &exclusive, "Usar hilos exclusivos (falso por defecto)", NULL },
   { NULL }
 };
@@ -164,7 +168,7 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if (port <= 1024) {
+  if (port <= 1024 || weather_port <= 1024) {
     fprintf(stderr, "El puerto debe ser mayor a 1024\n");
     return EXIT_FAILURE;
   }
@@ -173,7 +177,7 @@ int main(int argc, char **argv)
     max_threads = g_get_num_processors();
   }
 
-  weather_client = tcp_client_new(addr, SRV_WEATHER_PORT);
+  weather_client = tcp_client_new(addr, weather_port);
   server = tcp_server_new_full(addr, port, serve, NULL, max_conn, max_threads,
                                exclusive);
   tcp_server_run(server, &error);
