@@ -58,11 +58,11 @@ static bool exclusive = SRV_EXC_THREADS;
 /* Opciones de línea de comandos */
 static GOptionEntry options[] =
 {
-  { "addr", 'a', 0, G_OPTION_ARG_INT, &addr, "Direccion A (0=INADDR_ANY)", "A" },
-  { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Puerto P > 1024", "P" },
-  { "max_conn", 'c', 0, G_OPTION_ARG_INT, &max_conn, "C conexiones max", "C" },
-  { "max_threads", 't', 0, G_OPTION_ARG_INT, &max_threads, "T hilos max", "T" },
-  { "exclusive", 'e', 0, G_OPTION_ARG_NONE, &exclusive, "Hilos exclusivos", NULL },
+  { "addr", 'a', 0, G_OPTION_ARG_INT, &addr, "Usar direccion A (0 = INADDR_ANY por defecto)", "A" },
+  { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Enlazar al puerto P > 1024 (24000 por defecto)", "P" },
+  { "max_conn", 'c', 0, G_OPTION_ARG_INT, &max_conn, "Aceptar hasta C conexiones (10 por defecto)", "C" },
+  { "max_threads", 't', 0, G_OPTION_ARG_INT, &max_threads, "Usar hasta T hilos o -1 sin limites (usar cantidad de procesadores por defecto)", "T" },
+  { "exclusive", 'e', 0, G_OPTION_ARG_NONE, &exclusive, "Usar hilos exclusivos (falso por defecto)", NULL },
   { NULL }
 };
 
