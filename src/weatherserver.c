@@ -34,9 +34,9 @@
 #define SRV_DATA_TTL 3600
 
 /* Token de solicitud de datos. Ejemplo: get 0 = datos del día de hoy */
-#define TOK_GET    "get"
+#define TOK_GET      "get"
 /* Token de respuesta de error de solicitud */
-#define TOK_ERROR  "error"
+#define TOK_ERROR    "error"
 
 /* Dirección del servidor */
 static in_addr_t addr = SRV_ADDR;
