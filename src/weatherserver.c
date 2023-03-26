@@ -121,11 +121,8 @@ static void serve_weather(gpointer data, gpointer user_data)
 
   /* Leer solicitud del cliente */
   recv(connfd, recv_buff, sizeof(recv_buff), 0);
-  printf("Mensaje recibido: %s", recv_buff);
   printf("Bytes recibidos:\n");
-  for (int i = 0; i < (int)sizeof(recv_buff); i++)
-    printf("%02x ", (unsigned char)recv_buff[i]);
-  printf("\n");
+  printx_bytes(recv_buff, (int)sizeof(recv_buff));
 
   /* Analizar datos recibidos */
   weather_day = get_client_arg(recv_buff, (int)sizeof(recv_buff));
@@ -142,9 +139,7 @@ static void serve_weather(gpointer data, gpointer user_data)
   /* Enviar datos al cliente */
   send(connfd, send_buff, sizeof(send_buff), 0);
   printf("Bytes enviados:\n");
-  for (int i = 0; i < (int)sizeof(send_buff); i++)
-    printf("%02x ", (unsigned char)send_buff[i]);
-  printf("\n");
+  printx_bytes(send_buff, (int)sizeof(send_buff));
 
   /* Cerrar conexión */
   close(connfd);

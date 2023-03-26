@@ -111,11 +111,8 @@ void serve(gpointer data, gpointer user_data)
   recv_len = recv(connfd, recv_buf, sizeof(recv_buf), 0);
   if (recv_len > 0) {
     memcpy(&date, recv_buf, sizeof(date));
-    printf("Mensaje recibido: %.*s", recv_len, recv_buf);
     printf("Bytes recibidos:\n");
-    for (int i = 0; i < recv_len; i++)
-      printf("%02x ", (unsigned char)recv_buf[i]);
-    printf("\n");
+    printx_bytes(recv_buf, recv_len);
 
     /* Solicitar datos del clima */
     req.send = &date;
