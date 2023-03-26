@@ -17,6 +17,8 @@
 
 #include "tcpserver.h"
 
+/* Descripción del servidor */
+#define SRV_INFO     "- Servidor principal"
 /* Dirección del servidor por defecto */
 #define SRV_ADDR     INADDR_ANY
 /* Puerto del servidor por defecto */
@@ -28,6 +30,20 @@
 
 #define MAX_BUFF 255
 #define CMD_EXIT "salir"
+
+/* Dirección del servidor */
+static in_addr_t addr = SRV_ADDR;
+
+/* Puerto del servidor */
+static in_port_t port = SRV_PORT;
+
+/* Opciones de línea de comandos */
+static GOptionEntry options[] =
+{
+  { "addr", 'a', 0, G_OPTION_ARG_INT, &addr, "Direccion (0=INADDR_ANY)", "A" },
+  { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Puerto (>1024)", "P" },
+  { NULL }
+};
 
 /**
  * @brief Servidor eco (lectura/escritura).
@@ -85,7 +101,21 @@ void serve_echo(gpointer data, gpointer user_data)
 int main(int argc, char **argv)
 {
   GError *err = NULL;
+  GOptionContext *ctx;
   TcpServer *srv = tcp_server_new(SRV_ADDR, SRV_PORT, serve_echo, NULL);
+
+  ctx = g_option_context_new(SRV_INFO);
+  g_option_context_add_main_entries(ctx, options, NULL);
+
+  if (!g_option_context_parse(ctx, &argc, &argv, &err)) {
+    fprintf(stderr, "%s\n", err->message);
+    return EXIT_FAILURE;
+  }
+
+  if (port <= 1024) {
+    fprintf(stderr, "El puerto debe ser mayor a 1024\n");
+    return EXIT_FAILURE;
+  }
 
   tcp_server_run(srv, &err);
 
@@ -95,6 +125,7 @@ int main(int argc, char **argv)
   }
 
   tcp_server_free(srv);
+  g_option_context_free(ctx);
 
   return EXIT_SUCCESS;
 }
