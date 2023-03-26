@@ -21,24 +21,23 @@
 #include "util.h"
 
 /* Descripción del servidor */
-#define SRV_INFO        "- Servidor principal"
+#define SRV_INFO         "- Servidor principal"
 /* Dirección del servidor por defecto */
-#define SRV_ADDR        INADDR_ANY
+#define SRV_ADDR         INADDR_ANY
 /* Puerto del servidor por defecto */
-#define SRV_PORT        24000
+#define SRV_PORT         24000
+/* Puerto del servidor del clima por defecto */
+#define SRV_WEATHER_PORT 24001
 /* Cantidad máxima de conexiones por defecto */
-#define SRV_MAX_CONN    10
+#define SRV_MAX_CONN     10
 /* Cantidad máxima de hilos por defecto (0 = g_get_num_processors()) */
-#define SRV_MAX_THREADS 0
+#define SRV_MAX_THREADS  0
 /* Indica si se usan hilos exclusivos (no por defecto) */
-#define SRV_EXC_THREADS false
+#define SRV_EXC_THREADS  false
 /* Cantidad máxima para envío de bytes */
-#define SRV_SEND_MAX    80
+#define SRV_SEND_MAX     80
 /* Cantidad máxima para recepción de bytes */
-#define SRV_RECV_MAX    20
-
-#define MAX_BUFF 255
-#define CMD_EXIT "salir"
+#define SRV_RECV_MAX     20
 
 /* Dirección del servidor */
 static in_addr_t addr = SRV_ADDR;
@@ -174,7 +173,7 @@ int main(int argc, char **argv)
     max_threads = g_get_num_processors();
   }
 
-  weather_client = tcp_client_new(addr, 24001);
+  weather_client = tcp_client_new(addr, SRV_WEATHER_PORT);
   server = tcp_server_new_full(addr, port, serve, NULL, max_conn, max_threads,
                                exclusive);
   tcp_server_run(server, &error);
