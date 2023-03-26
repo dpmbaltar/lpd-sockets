@@ -18,15 +18,21 @@
 #include "tcpserver.h"
 
 /* Descripción del servidor */
-#define SRV_INFO     "- Servidor principal"
+#define SRV_INFO        "- Servidor principal"
 /* Dirección del servidor por defecto */
-#define SRV_ADDR     INADDR_ANY
+#define SRV_ADDR        INADDR_ANY
 /* Puerto del servidor por defecto */
-#define SRV_PORT     24000
+#define SRV_PORT        24000
+/* Cantidad máxima de conexiones por defecto */
+#define SRV_MAX_CONN    10
+/* Cantidad máxima de hilos por defecto (0 = g_get_num_processors()) */
+#define SRV_MAX_THREADS 0
+/* Indica si se usan hilos exclusivos (no por defecto) */
+#define SRV_EXC_THREADS false
 /* Cantidad máxima para envío de bytes */
-#define SRV_SEND_MAX 80
+#define SRV_SEND_MAX    80
 /* Cantidad máxima para recepción de bytes */
-#define SRV_RECV_MAX 20
+#define SRV_RECV_MAX    20
 
 #define MAX_BUFF 255
 #define CMD_EXIT "salir"
@@ -37,11 +43,23 @@ static in_addr_t addr = SRV_ADDR;
 /* Puerto del servidor */
 static in_port_t port = SRV_PORT;
 
+/* Máximo de conexiones */
+static int max_conn = SRV_MAX_CONN;
+
+/* Máximo de hilos */
+static int max_threads = SRV_MAX_THREADS;
+
+/* Usar hilos exclusivos */
+static bool exclusive = SRV_EXC_THREADS;
+
 /* Opciones de línea de comandos */
 static GOptionEntry options[] =
 {
-  { "addr", 'a', 0, G_OPTION_ARG_INT, &addr, "Direccion (0=INADDR_ANY)", "A" },
-  { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Puerto (>1024)", "P" },
+  { "addr", 'a', 0, G_OPTION_ARG_INT, &addr, "Direccion A (0=INADDR_ANY)", "A" },
+  { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Puerto P > 1024", "P" },
+  { "max_conn", 'c', 0, G_OPTION_ARG_INT, &max_conn, "C conexiones max", "C" },
+  { "max_threads", 't', 0, G_OPTION_ARG_INT, &max_threads, "T hilos max", "T" },
+  { "exclusive", 'e', 0, G_OPTION_ARG_NONE, &exclusive, "Hilos exclusivos", NULL },
   { NULL }
 };
 
@@ -117,7 +135,8 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  server = tcp_server_new(addr, port, serve_echo, NULL);
+  server = tcp_server_new_full(addr, port, serve_echo, NULL, max_conn,
+                               max_threads, exclusive);
   tcp_server_run(server, &error);
 
   if (error != NULL) {
