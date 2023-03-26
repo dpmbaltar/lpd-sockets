@@ -52,10 +52,10 @@ static GOptionEntry options[] =
   { NULL }
 };
 
-/* Cache del clima */
+/* Caché de datos del clima */
 static WeatherInfo weather_data[WEATHER_MAX_DAYS] = { 0 };
 
-/* Cache timestamps */
+/* Marcas de tiempo de la caché */
 static time_t weather_cache[WEATHER_MAX_DAYS] = { 0 };
 
 static void get_weather(WeatherInfo *weather_info, int day)
@@ -82,7 +82,7 @@ static char **get_client_args(const char *str, unsigned int len)
   GStrv tokens = NULL;
   char tokens_str[len+1];
 
-  /* Forzar cadena con null byte al final */
+  /* Forzar cadena con byte nulo (0x00) al final */
   tokens_str[len] = 0;
   memcpy(tokens_str, str, len);
   tokens = g_str_tokenize_and_fold(tokens_str, NULL, NULL);
@@ -111,7 +111,7 @@ static void serve_weather(gpointer data, gpointer user_data)
     printf("%02x ", (unsigned char)recv_buff[i]);
   printf("\n");
 
-  /* Analizar el dato recibido del cliente */
+  /* Analizar datos recibidos */
   client_args = get_client_args(recv_buff, sizeof(recv_buff));
   if (client_args != NULL && g_strv_length(client_args) >= 2) {
     if (strcmp(client_args[0], TOK_GET) == 0) {
