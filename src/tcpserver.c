@@ -133,13 +133,13 @@ void tcp_server_run(TcpServer  *srv,
   /* Escuchar puerto */
   listening = listen(sockfd, srv->max_conn);
   return_throw_new_if(listening == -1, TCP_SERVER_SOCK_LISTEN_ERROR, err);
-  printf("Servidor escuchando...\n");
+  printf("Servidor escuchando puerto %d...\n", srv->port);
 
   do {
     /* Aceptar conexión de cliente */
     connfd = accept(sockfd, (struct sockaddr*)&cliaddr, &cliaddr_len);
     return_throw_new_if(connfd == -1, TCP_SERVER_SOCK_ACCEPT_ERROR, err);
-    printf("Conexión de cliente aceptada por el servidor...\n");
+    printf("Conexión aceptada...\n");
 
     /* Ejecutar función del servidor en otro hilo */
     g_thread_pool_push(srv->thread_pool, GINT_TO_POINTER(connfd), &local_err);
