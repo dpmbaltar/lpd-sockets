@@ -17,6 +17,15 @@
 
 #include "tcpserver.h"
 
+/* Dirección del servidor por defecto */
+#define SRV_ADDR     INADDR_ANY
+/* Puerto del servidor por defecto */
+#define SRV_PORT     24000
+/* Cantidad máxima para envío de bytes */
+#define SRV_SEND_MAX 80
+/* Cantidad máxima para recepción de bytes */
+#define SRV_RECV_MAX 20
+
 #define MAX_BUFF 255
 #define CMD_EXIT "salir"
 
@@ -76,7 +85,7 @@ void serve_echo(gpointer data, gpointer user_data)
 int main(int argc, char **argv)
 {
   GError *err = NULL;
-  TcpServer *srv = tcp_server_new(INADDR_ANY, 24000, serve_echo, NULL);
+  TcpServer *srv = tcp_server_new(SRV_ADDR, SRV_PORT, serve_echo, NULL);
 
   tcp_server_run(srv, &err);
 
