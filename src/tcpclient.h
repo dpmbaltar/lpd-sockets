@@ -22,6 +22,7 @@ TcpClient      *tcp_client_new          (in_addr_t   addr,
                                          gpointer    data);
 
 void            tcp_client_run          (TcpClient  *client,
+                                         gpointer    data,
                                          GError    **error);
 
 void            tcp_client_free         (TcpClient  *client);

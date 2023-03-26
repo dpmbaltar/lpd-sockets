@@ -46,6 +46,7 @@ TcpClient *tcp_client_new(in_addr_t addr,
 }
 
 void tcp_client_run(TcpClient  *cli,
+                    gpointer    data,
                     GError    **err)
 {
   g_return_if_fail(cli != NULL);
@@ -85,7 +86,7 @@ void tcp_client_run(TcpClient  *cli,
   printf("Conectado al servidor...\n");
 
   /* Ejecutar función del cliente */
-  cli->func(GINT_TO_POINTER(sockfd), cli->data);
+  cli->func(GINT_TO_POINTER(sockfd), data != NULL ? data : cli->data);
 
 #ifdef G_OS_UNIX
   close(sockfd);
