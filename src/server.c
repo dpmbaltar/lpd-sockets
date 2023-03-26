@@ -100,15 +100,15 @@ void serve_echo(gpointer data, gpointer user_data)
  */
 int main(int argc, char **argv)
 {
-  GError *err = NULL;
-  GOptionContext *ctx;
-  TcpServer *srv = tcp_server_new(SRV_ADDR, SRV_PORT, serve_echo, NULL);
+  GError         *error = NULL;
+  GOptionContext *context;
+  TcpServer      *server = tcp_server_new(SRV_ADDR, SRV_PORT, serve_echo, NULL);
 
-  ctx = g_option_context_new(SRV_INFO);
-  g_option_context_add_main_entries(ctx, options, NULL);
+  context = g_option_context_new(SRV_INFO);
+  g_option_context_add_main_entries(context, options, NULL);
 
-  if (!g_option_context_parse(ctx, &argc, &argv, &err)) {
-    fprintf(stderr, "%s\n", err->message);
+  if (!g_option_context_parse(context, &argc, &argv, &error)) {
+    fprintf(stderr, "%s\n", error->message);
     return EXIT_FAILURE;
   }
 
@@ -117,15 +117,15 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  tcp_server_run(srv, &err);
+  tcp_server_run(server, &error);
 
-  if (err != NULL) {
-    fprintf(stderr, "%s", err->message);
+  if (error != NULL) {
+    fprintf(stderr, "%s", error->message);
     return EXIT_FAILURE;
   }
 
-  tcp_server_free(srv);
-  g_option_context_free(ctx);
+  tcp_server_free(server);
+  g_option_context_free(context);
 
   return EXIT_SUCCESS;
 }
