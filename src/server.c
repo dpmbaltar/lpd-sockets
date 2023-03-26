@@ -16,6 +16,9 @@
 #endif
 
 #include "tcpserver.h"
+#include "tcpclient.h"
+#include "weather.h"
+#include "util.h"
 
 /* Descripción del servidor */
 #define SRV_INFO        "- Servidor principal"
@@ -63,42 +66,69 @@ static GOptionEntry options[] =
   { NULL }
 };
 
-/**
- * @brief Servidor eco (lectura/escritura).
- *
- * Hace eco de los mensajes enviados por un cliente. Se cierra si recibe el
- * mensaje de salida definido en CMD_EXIT, por ejemplo, "salir".
- *
- * @param data (int) resultado de accept()
- * @param user_data sin utilizar por ahora
- */
-void serve_echo(gpointer data, gpointer user_data)
+/* Cliente para el servidor del clima */
+static TcpClient *weather_client = NULL;
+
+static void get_weather(gpointer _sockfd, gpointer _request)
+{
+  int sockfd = GPOINTER_TO_INT(_sockfd);
+  Request *request = (Request*)_request;
+
+  g_return_if_fail(sockfd != -1);
+  g_return_if_fail(request != NULL);
+
+  char recv_buf[request->recv_len];
+
+  printf("Enviar mensaje al servidor del clima.\n");
+  send(sockfd, request->send, request->send_len, 0);
+
+  printf("Recibir mensaje del servidor del clima.\n");
+  recv(sockfd, recv_buf, request->recv_len, 0);
+  memcpy(request->recv, recv_buf, request->recv_len);
+  close(sockfd);
+}
+
+void serve(gpointer data, gpointer user_data)
 {
   int connfd = GPOINTER_TO_INT(data);
   g_return_if_fail(connfd != -1);
 
-  int n;
-  char buff[MAX_BUFF];
+  GError *error = NULL;
+  Date date = DATE_INIT;
+  WeatherInfo weather = WEATHER_INFO_INIT;
+  Request request = REQUEST_INIT;
+  int recv_len = 0;
+  char recv_buf[SRV_RECV_MAX];
+  char send_buf[SRV_SEND_MAX];
+  memset(recv_buf, 0, sizeof(recv_buf));
+  memset(send_buf, 0, sizeof(send_buf));
 
-  for (n = 0;;n++) {
-    // Leer mensaje del cliente y copiarlo al búfer
-    memset(buff, 0, MAX_BUFF);
-    recv(connfd, buff, sizeof(buff), 0);
-    printf("Mensaje recibido: %s", buff);
+  /* Leer solicitud del cliente */
+  recv_len = recv(connfd, recv_buf, sizeof(recv_buf), 0);
+  if (recv_len > 0) {
+    memcpy(&date, recv_buf, sizeof(date));
+    printf("Mensaje recibido: %.*s", recv_len, recv_buf);
+    printf("Bytes recibidos:\n");
+    for (int i = 0; i < recv_len; i++)
+      printf("%02x ", (unsigned char)recv_buf[i]);
+    printf("\n");
 
-    // Enviar eco
-    send(connfd, buff, sizeof(buff), 0);
-    printf("Mensaje enviado: %s", buff);
+    /* Solicitar datos del clima */
+    request.send = &date;
+    request.recv = &weather;
+    request.send_len = sizeof(date);
+    request.recv_len = sizeof(weather);
+    tcp_client_run(weather_client, &request, &error);
+    memcpy(send_buf, &weather, sizeof(weather));
 
-    // Salir del bucle si el cliente sale
-    if ((strncmp(buff, CMD_EXIT, strlen(CMD_EXIT))) == 0) {
-        printf("El cliente ha salido.\n");
-        break;
-    }
+    printf("Datos del clima recibidos: {%s, %d, %.1f}\n",
+         weather.date, weather.cond, weather.temp);
+
+    /* Enviar datos obtenidos al cliente */
+    send(connfd, send_buf, sizeof(send_buf), 0);
   }
 
   close(connfd);
-  printf("Mensajes recibidos: %d\n", n);
 }
 
 /**
@@ -135,8 +165,13 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  server = tcp_server_new_full(addr, port, serve_echo, NULL, max_conn,
-                               max_threads, exclusive);
+  if (max_threads == 0) {
+    max_threads = g_get_num_processors();
+  }
+
+  weather_client = tcp_client_new(addr, 24001, get_weather, NULL);
+  server = tcp_server_new_full(addr, port, serve, NULL, max_conn, max_threads,
+                               exclusive);
   tcp_server_run(server, &error);
 
   if (error != NULL) {

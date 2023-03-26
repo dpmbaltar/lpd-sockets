@@ -6,6 +6,7 @@ client_sources = [
 server_sources = [
   'server.c',
   'tcpserver.c',
+  'tcpclient.c'
 ]
 
 weather_server_sources = [
