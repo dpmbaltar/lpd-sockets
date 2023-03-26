@@ -16,13 +16,15 @@ typedef uint16_t in_port_t;
 
 typedef struct _TcpClient TcpClient;
 
-TcpClient      *tcp_client_new          (in_addr_t   addr,
-                                         in_port_t   port,
-                                         GFunc       func,
-                                         gpointer    data);
+typedef void* (*TcpClientFunc)          (int             sockfd,
+                                         gpointer        data);
 
-void            tcp_client_run          (TcpClient  *client,
-                                         gpointer    data,
-                                         GError    **error);
+TcpClient      *tcp_client_new          (in_addr_t       addr,
+                                         in_port_t       port);
 
-void            tcp_client_free         (TcpClient  *client);
+GThread        *tcp_client_run          (TcpClient      *client,
+                                         TcpClientFunc   func,
+                                         gpointer        func_data,
+                                         GError        **error);
+
+void            tcp_client_free         (TcpClient      *client);
