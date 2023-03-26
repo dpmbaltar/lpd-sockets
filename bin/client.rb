@@ -55,6 +55,13 @@ begin
   socket.puts message
   puts 'Mensaje enviado.'
 
+  # Mostrar bytes enviados
+  puts 'Bytes enviados:'
+  message.each_byte do |b|
+    print '%02x ' % b
+  end
+  puts
+
   # Mostrar bytes recibidos
   puts 'Bytes recibidos:'
   response = socket.recv WeatherInfo.size
