@@ -51,7 +51,7 @@ begin
 
   # Solicitar datos a enviar al usuario
   puts 'Escribir mensaje:'
-  message = gets.chomp.strip
+  message = gets
 
   # Manejar fechas para el servidor del clima
   if message.match? /[0-9]{4}-[0-9]{2}-[0-9]{2}/ then
@@ -85,10 +85,14 @@ begin
   # Leer bytes en struct WeatherInfo, si hay suficientes datos
   if response.bytesize >= WeatherInfo.size then
     weather_info = WeatherInfo.new.unpack response
-    puts 'Datos del clima recibidos:'
-    puts '  Fecha: %s' % weather_info.date
-    puts '  Condición: %d (%s)' % [weather_info.cond, weather_info.cond_str]
-    puts '  Temperatura: %.1f' % weather_info.temp
+    if weather_info.date.empty? then
+      puts 'Datos del clima recibidos:'
+      puts '  Fecha: %s' % weather_info.date
+      puts '  Condición: %d (%s)' % [weather_info.cond, weather_info.cond_str]
+      puts '  Temperatura: %.1f' % weather_info.temp
+    else
+      puts 'Datos recibidos no válidos'
+    end
   end
 
   # Cerrar conexión
