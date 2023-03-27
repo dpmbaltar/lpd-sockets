@@ -1,5 +1,6 @@
 #include <glib.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,8 +40,8 @@ G_DEFINE_QUARK(tcp-server-error, tcp_server_error)
 
 struct _TcpServer
 {
-  in_addr_t    addr;
-  in_port_t    port;
+  uint32_t     addr;
+  uint16_t     port;
   int          max_conn;
 
   GThreadPool *thread_pool;
@@ -54,8 +55,8 @@ static const char *error_messages[] = {
   [TCP_SERVER_SOCK_ACCEPT_ERROR] = "Error al aceptar conexión",
 };
 
-TcpServer *tcp_server_new_full(in_addr_t addr,
-                               in_port_t port,
+TcpServer *tcp_server_new_full(uint32_t  addr,
+                               uint16_t  port,
                                GFunc     func,
                                gpointer  data,
                                int       max_conn,
@@ -81,8 +82,8 @@ TcpServer *tcp_server_new_full(in_addr_t addr,
   return srv;
 }
 
-TcpServer *tcp_server_new(in_addr_t addr,
-                          in_port_t port,
+TcpServer *tcp_server_new(uint32_t  addr,
+                          uint16_t  port,
                           GFunc     func,
                           gpointer  data)
 {
