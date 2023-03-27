@@ -45,13 +45,11 @@ WeatherInfo = Struct.new :date, :temp, :cond do
 end
 
 # Ejecutar loop hasta que el usuario escriba "salir"
-begin
-  # Abrir conexión
-  socket = TCPSocket.new options.addr, options.port
-
+loop do
   # Solicitar datos a enviar al usuario
   puts 'Escribir mensaje:'
   message = gets
+  break if message.chomp.downcase == 'salir'
 
   # Manejar fechas para el servidor del clima
   if message.match? /[0-9]{4}-[0-9]{2}-[0-9]{2}/ then
@@ -62,6 +60,9 @@ begin
       parts[2,1].pack('C')
     ].join
   end
+
+  # Abrir conexión
+  socket = TCPSocket.new options.addr, options.port
 
   # Enviar datos
   socket.send message, 0
@@ -99,4 +100,4 @@ begin
   socket.close
   puts 'Conexión cerrada.'
 
-end until message.downcase == 'salir'
+end
