@@ -29,10 +29,16 @@
 
 G_DEFINE_QUARK(tcp-client-error, tcp_client_error)
 
+typedef struct _TcpClientThreadArgs TcpClientThreadArgs;
+
 struct _TcpClient
 {
-  const char   *host;
-  uint16_t      port;
+  const char *host;
+  uint16_t    port;
+};
+
+struct _TcpClientThreadArgs
+{
   TcpClientFunc func;
   gpointer      data;
   int           sock;
@@ -48,36 +54,26 @@ TcpClient *tcp_client_new(const char *host, uint16_t port)
   TcpClient *client = (TcpClient*)malloc(sizeof(TcpClient));
   client->host = host;
   client->port = port;
-  client->func = NULL;
-  client->data = 0;
-  client->sock = -1;
 
   return client;
 }
 
-static gpointer run_client_func(gpointer data)
+static gpointer run_client_thread(gpointer data)
 {
   gpointer retval = NULL;
-  TcpClient *client = (TcpClient*)data;
-  int sockfd = client->sock;
+  TcpClientThreadArgs *args = (TcpClientThreadArgs*)data;
 
-  g_return_val_if_fail(client != NULL, NULL);
-  g_return_val_if_fail(sockfd != -1, NULL);
+  g_return_val_if_fail(args != NULL, retval);
 
-  retval = client->func(sockfd, client->data);
-  client->func = NULL;
-  client->data = NULL;
-  client->sock = -1;
-
+  retval = args->func(args->sock, args->data);
 #ifdef G_OS_UNIX
-  close(sockfd);
+  close(args->sock);
 #endif
-
 #ifdef G_OS_WIN32
-  closesocket(sockfd);
+  closesocket(args->sock);
   WSACleanup();
 #endif
-
+  g_free(args);
   printf("Desconectado del servidor.\n");
 
   return retval;
@@ -94,6 +90,7 @@ GThread *tcp_client_run(TcpClient      *client,
   int sockfd, connected;
   struct sockaddr_in servaddr;
   size_t servaddr_len = sizeof(servaddr);
+  TcpClientThreadArgs *thread_args;
 
 #ifdef G_OS_WIN32
   /**
@@ -125,12 +122,13 @@ GThread *tcp_client_run(TcpClient      *client,
   printf("Conectado al servidor...\n");
 
   /* Preparar parámetros para función del cliente */
-  client->sock = sockfd;
-  client->func = func;
-  client->data = func_data;
+  thread_args = g_new0(TcpClientThreadArgs, 1);
+  thread_args->func = func;
+  thread_args->data = func_data;
+  thread_args->sock = sockfd;
 
   /* Ejecutar función del cliente en un nuevo thread, si es posible */
-  return g_thread_try_new(NULL, run_client_func, client, error);
+  return g_thread_try_new(NULL, run_client_thread, thread_args, error);
 }
 
 void tcp_client_free(TcpClient *client)
