@@ -19,12 +19,12 @@ typedef struct _Date
 
 /* Condiciones del clima */
 typedef enum _WeatherCond {
-  WC_CLEAR,
-  WC_CLOUD,
-  WC_MIST,
-  WC_RAIN,
-  WC_SHOWERS,
-  WC_SNOW,
+  W_CLEAR,
+  W_CLOUD,
+  W_MIST,
+  W_RAIN,
+  W_SHOWERS,
+  W_SNOW,
   N_CONDITIONS
 } WeatherCond;
 
