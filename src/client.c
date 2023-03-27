@@ -1,5 +1,6 @@
 #include <glib.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,6 +30,20 @@
 #define MAX_BUFF 20
 /* Token para salir del programa */
 #define TOK_EXIT "salir"
+
+/* Host del servidor */
+static char *host = SRV_HOST;
+
+/* Puerto del servidor */
+static uint16_t port = SRV_PORT;
+
+/* Opciones de línea de comandos */
+static GOptionEntry options[] =
+{
+  { "host", 'H', 0, G_OPTION_ARG_STRING, &host, "Host del servidor (127.0.0.1 por defecto)", "H" },
+  { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Puerto del servidor (24000 por defecto)", "P" },
+  { NULL }
+};
 
 static void parse_date(const char *str, Date *date)
 {
@@ -95,10 +110,21 @@ static void *client_func(int sockfd, gpointer data)
  */
 int main(int argc, char **argv)
 {
-  GError    *error = NULL;
-  GThread   *client_thread;
-  TcpClient *client = tcp_client_new(SRV_HOST, SRV_PORT);
+  GError         *error = NULL;
+  GOptionContext *context;
+  GThread        *client_thread;
+  TcpClient      *client;
 
+  context = g_option_context_new("- Cliente TCP");
+  g_option_context_add_main_entries(context, options, NULL);
+
+  if (!g_option_context_parse(context, &argc, &argv, &error)) {
+    fprintf(stderr, "%s\n", error->message);
+    return EXIT_FAILURE;
+  }
+
+  g_option_context_free(context);
+  client = tcp_client_new(host, port);
   g_return_val_if_fail(client != NULL, EXIT_FAILURE);
 
   bool exit = FALSE;
