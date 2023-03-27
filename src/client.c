@@ -18,54 +18,68 @@
 #endif
 
 #include "tcpclient.h"
+#include "weather.h"
+#include "util.h"
 
-#define SRV_ADDR "127.0.0.1"
+/* Host del servidor por defecto */
+#define SRV_HOST "127.0.0.1"
+/* Puerto del servidor por defecto */
 #define SRV_PORT 24000
-#define MAX_BUFF 255
-#define CMD_EXIT "salir"
+/* Cantidad máxima de datos a leer del usuario */
+#define MAX_BUFF 20
+/* Token para salir del programa */
+#define TOK_EXIT "salir"
 
-/**
- * Solicita mensajes al usuario y los envía al servidor principal.
- *
- * @param data resultado de socket()
- * @param user_data sin utilizar
- */
-void client(gpointer data, gpointer user_data)
+static void parse_date(const char *str, Date *date)
 {
-  int sockfd = GPOINTER_TO_INT(data);
-  g_return_if_fail(sockfd != -1);
+  g_return_if_fail(str != NULL || strlen(str) < 10);
+  g_return_if_fail(date != NULL);
 
-  bool exit = FALSE;
-  int send_num = 0;
-  int buff_len = 0;
+  GDate *gdate = g_date_new();
+  char date_str[11];
+  date_str[10] = 0;
+  memcpy(date_str, str, 10);
+  g_date_set_parse(gdate, date_str);
+
+  if (g_date_valid(gdate)) {
+    date->year = g_date_get_year(gdate);
+    date->month = g_date_get_month(gdate);
+    date->day = g_date_get_day(gdate);
+  }
+
+  g_date_free(gdate);
+}
+
+static void *client_func(int sockfd, gpointer data)
+{
+  g_return_val_if_fail(sockfd != -1, NULL);
+
   char buff[MAX_BUFF];
+  Date date = DATE_INIT;
+  WeatherInfo weather = WEATHER_INFO_INIT;
 
-  do {
-    /* Leer mensaje del usuario */
-    memset(buff, 0, sizeof(buff));
-    printf("Escribir mensaje: ");
-    while (buff_len < sizeof(buff) && (buff[buff_len++] = getchar()) != '\n');
-    buff_len = 0;
+  /* Obtener fecha ingresada por el usuario */
+  parse_date((const char*)data, &date);
+  memset(buff, 0, sizeof(buff));
+  memcpy(buff, &date, sizeof(date));
 
-    /* Salir si se escribe el mensaje CMD_EXIT */
-    if ((strncmp(buff, CMD_EXIT, strlen(CMD_EXIT))) == 0)
-      exit = TRUE;
+  /* Enviar mensaje al servidor */
+  send(sockfd, buff, sizeof(buff), 0);
+  printf("Bytes enviados:\n");
+  printx_bytes(buff, (int)sizeof(buff));
 
-    /* Enviar mensaje al servidor */
-    send(sockfd, buff, sizeof(buff), 0);
-    printf("Mensaje enviado.\n");
+  /* Leer respuesta del servidor */
+  memset(buff, 0, sizeof(buff));
+  recv(sockfd, buff, sizeof(buff), 0);
+  printf("Bytes recibidos:\n");
+  printx_bytes(buff, (int)sizeof(buff));
 
-    /* Leer respuesta del servidor */
-    memset(buff, 0, sizeof(buff));
-    recv(sockfd, buff, sizeof(buff), 0);
-    printf("Respuesta del servidor: %s\n", buff);
+  /* Mostrar datos al usuario */
+  memcpy(&weather, buff, sizeof(weather));
+  printf("Datos del clima recibidos: {%s, %d, %.1f}\n",
+          weather.date, weather.cond, weather.temp);
 
-    send_num++;
-  } while (!exit);
-
-  close(sockfd);
-  printf("Desconectado del servidor.");
-  printf("Mensajes enviados: %d\n", send_num);
+  return NULL;
 }
 
 /**
@@ -75,23 +89,51 @@ void client(gpointer data, gpointer user_data)
  * 3. send()/recv()
  * 4. close()
  *
- * @param argc cantidad de parámetros
- * @param argv parámetros
+ * @param argc cantidad de argumentos de línea de comandos
+ * @param argv argumentos de línea de comandos
  * @return 0 si la ejecución es exitosa, 1 si falla
  */
 int main(int argc, char **argv)
 {
-  GError    *err = NULL;
-  TcpClient *cli = tcp_client_new(inet_addr(SRV_ADDR), SRV_PORT, client, NULL);
+  GError    *error = NULL;
+  GThread   *client_thread;
+  TcpClient *client = tcp_client_new(SRV_HOST, SRV_PORT);
 
-  tcp_client_run(cli, &err);
+  g_return_val_if_fail(client != NULL, EXIT_FAILURE);
 
-  if (err != NULL) {
-    fprintf(stderr, "%s", err->message);
-    return EXIT_FAILURE;
-  }
+  bool exit = FALSE;
+  int  buff_len = 0;
+  char buff[MAX_BUFF];
 
-  tcp_client_free(cli);
+  do {
+    /* Leer mensaje del usuario */
+    printf("Escribir mensaje:\n");
+    memset(buff, 0, sizeof(buff));
+    while (buff_len < sizeof(buff)-1 && (buff[buff_len++] = getchar()) != '\n');
+    buff_len = 0;
+
+    /* Salir si se escribe el mensaje TOK_EXIT */
+    if ((strncmp(buff, TOK_EXIT, strlen(TOK_EXIT))) == 0) {
+      exit = TRUE;
+      continue;
+    }
+
+    client_thread = tcp_client_run(client, client_func, buff, &error);
+
+    if (error != NULL) {
+      fprintf(stderr, "%s", error->message);
+      g_error_free(error);
+      return EXIT_FAILURE;
+    }
+
+    if (client_thread != NULL) {
+      g_thread_join(client_thread);
+      g_thread_unref(client_thread);
+    }
+
+  } while (!exit);
+
+  tcp_client_free(client);
 
   return EXIT_SUCCESS;
 }
