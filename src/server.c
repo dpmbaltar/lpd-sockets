@@ -140,6 +140,7 @@ void serve(gpointer data, gpointer user_data)
   }
 
   close(connfd);
+  printf("Desconectado del cliente.\n");
 }
 
 /**
