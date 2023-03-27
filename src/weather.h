@@ -1,9 +1,5 @@
 #pragma once
 
-/* Mímino de días a partir de hoy */
-#define WEATHER_MIN_DAYS  0
-/* Máximo de días a partir de hoy */
-#define WEATHER_MAX_DAYS  7
 /* Inicializador para WeatherInfo */
 #define WEATHER_INFO_INIT { {(char)0}, (char)0, (float)(0.0F) }
 
@@ -24,6 +20,3 @@ typedef struct _WeatherInfo {
   char  cond;
   float temp;
 } WeatherInfo;
-
-int             weather_get_info        (WeatherInfo *weather_info, int day);
-const char     *weather_cond_str        (WeatherCond  cond);

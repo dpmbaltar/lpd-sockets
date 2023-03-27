@@ -37,6 +37,17 @@
 /* TTL para datos del clima (segundos) */
 #define SRV_DATA_TTL 3600
 
+/* Mímino de días para el clima, a partir de la fecha actual */
+#define W_MIN_DAYS    0
+/* Máximo de días para el clima, a partir de la fecha actual */
+#define W_MAX_DAYS    7
+/* Temperatura mínima para generar datos del clima */
+#define W_MIN_TEMP    -25.0F
+/* Temperatura máxima para generar datos del clima */
+#define W_MAX_TEMP    50.0F
+/* Formato de fecha para generar datos del clima */
+#define W_DATE_FORMAT "%Y-%m-%d"
+
 /* Dirección del servidor */
 static uint32_t addr = SRV_ADDR;
 
@@ -52,10 +63,10 @@ static GOptionEntry options[] =
 };
 
 /* Caché de datos del clima */
-static WeatherInfo weather_data[WEATHER_MAX_DAYS] = { 0 };
+static WeatherInfo weather_data[W_MAX_DAYS] = { 0 };
 
 /* Marcas de tiempo de la caché */
-static time_t weather_cache[WEATHER_MAX_DAYS] = { 0 };
+static time_t weather_cache[W_MAX_DAYS] = { 0 };
 
 static void get_weather(WeatherInfo *weather_info, int day)
 {
@@ -63,14 +74,27 @@ static void get_weather(WeatherInfo *weather_info, int day)
   struct timeval ts;
 
   g_return_if_fail(weather_info != NULL);
-  g_return_if_fail(day >= WEATHER_MIN_DAYS && day <= WEATHER_MAX_DAYS);
+  g_return_if_fail(day >= W_MIN_DAYS && day <= W_MAX_DAYS);
 
   gettimeofday(&ts, NULL);
   g_mutex_lock(&mutex);
 
   if ((ts.tv_sec - weather_cache[day]) > SRV_DATA_TTL) {
-    weather_get_info(&weather_data[day], day);
+    GDateTime *dt_now = g_date_time_new_now_local();
+    GDateTime *dt = g_date_time_add_days(dt_now, day);
+    GRand *rand = g_rand_new();
+    char *date = g_date_time_format(dt, W_DATE_FORMAT);
+
+    /* Generar datos aleatorios */
+    memcpy(&(weather_data[day].date), date, sizeof(((WeatherInfo*)0)->date));
+    weather_data[day].cond = g_rand_int_range(rand, 0, N_CONDITIONS);
+    weather_data[day].temp = g_rand_double_range(rand, W_MIN_TEMP, W_MAX_TEMP);
     weather_cache[day] = ts.tv_sec;
+
+    g_date_time_unref(dt_now);
+    g_date_time_unref(dt);
+    g_rand_free(rand);
+    g_free(date);
   }
 
   memcpy(weather_info, &weather_data[day], sizeof(weather_data[day]));

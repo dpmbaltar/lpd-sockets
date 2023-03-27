@@ -12,7 +12,6 @@ server_sources = [
 weather_server_sources = [
   'weatherserver.c',
   'tcpserver.c',
-  'weather.c',
 ]
 
 executable('client', client_sources)
