@@ -22,17 +22,17 @@
 
 struct _TcpClient
 {
-  in_addr_t     addr;
-  in_port_t     port;
+  const char   *host;
+  uint16_t      port;
   TcpClientFunc func;
   gpointer      data;
   int           sock;
 };
 
-TcpClient *tcp_client_new(in_addr_t addr, in_port_t port)
+TcpClient *tcp_client_new(const char *host, uint16_t port)
 {
   TcpClient *client = (TcpClient*)malloc(sizeof(TcpClient));
-  client->addr = addr;
+  client->host = host;
   client->port = port;
   client->func = NULL;
   client->data = 0;
@@ -97,7 +97,7 @@ GThread *tcp_client_run(TcpClient      *client,
   /* Asignar IP y puerto */
   memset(&servaddr, 0, servaddr_len);
   servaddr.sin_family = AF_INET;
-  servaddr.sin_addr.s_addr = htonl(client->addr);
+  servaddr.sin_addr.s_addr = inet_addr(client->host);
   servaddr.sin_port = htons(client->port);
 
   /* Crear socket */
@@ -107,7 +107,7 @@ GThread *tcp_client_run(TcpClient      *client,
 
   /* Conectar socket del cliente al socket del servidor */
   connected = connect(sockfd, (struct sockaddr*)&servaddr, servaddr_len);
-  g_return_val_if_fail(connected == 0, NULL);
+  g_return_val_if_fail(connected != -1, NULL);
   printf("Conectado al servidor...\n");
 
   /* Preparar parámetros para función del cliente */
