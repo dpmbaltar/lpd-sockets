@@ -6,15 +6,15 @@ require 'socket'
 
 # Opciones de línea de comandos
 options = OpenStruct.new
-options.addr = 'localhost'
+options.host = 'localhost'
 options.port = 24000
 
 # Obtener opciones
 OptionParser.new do |arg|
-  arg.on '-a', '--addr ADDR', 'Dirección (i.e. -a localhost)' do |val|
-    options.addr = val
+  arg.on '-h', '--host HOST', 'Host del servidor (i.e. -h localhost)' do |val|
+    options.host = val
   end
-  arg.on '-p', '--port PORT', 'Puerto (i.e. -p 24000)' do |val|
+  arg.on '-p', '--port PORT', 'Puerto del servidor (i.e. -p 24000)' do |val|
     options.port = val.to_i
   end
 end.parse!
@@ -62,7 +62,7 @@ loop do
   end
 
   # Abrir conexión
-  socket = TCPSocket.new options.addr, options.port
+  socket = TCPSocket.new options.host, options.port
 
   # Enviar datos
   socket.send message, 0
