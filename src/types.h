@@ -17,6 +17,35 @@ typedef struct _Date
   uint8_t  day;
 } Date;
 
+/* Signos */
+typedef enum _AstroSign
+{
+  S_ARIES,
+  S_TAURUS,
+  S_GEMINI,
+  S_CANCER,
+  S_LEO,
+  S_VIRGO,
+  S_LIBRA,
+  S_SCORPIO,
+  S_SAGITTARIUS,
+  S_CAPRICORN,
+  S_AQUARIUS,
+  S_PISCES,
+  N_SIGNS
+} AstroSign;
+
+/* Estructura para información del horóscopo */
+typedef struct _AstroInfo
+{
+  char sign;
+  char sign_compat;
+  char date_from[10];
+  char date_to[10];
+  char color[10];
+  char mood[20];
+} AstroInfo;
+
 /* Condiciones del clima */
 typedef enum _WeatherCond {
   W_CLEAR,
