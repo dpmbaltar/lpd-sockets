@@ -20,6 +20,7 @@
 
 #include "tcpclient.h"
 
+/* Define el dominio de errores TCP_CLIENT_ERROR */
 G_DEFINE_QUARK(tcp-client-error, tcp_client_error)
 
 typedef struct _TcpClientThreadArgs TcpClientThreadArgs;
@@ -37,6 +38,7 @@ struct _TcpClientThreadArgs
   int           sock;
 };
 
+/* Mensajes de error */
 static const char *error_messages[] = {
   [TCP_CLIENT_SOCK_ERROR]         = "Error al crear socket",
   [TCP_CLIENT_SOCK_CONNECT_ERROR] = "Error al abrir conexión con el socket",
