@@ -19,7 +19,7 @@
 #endif
 
 #include "tcpserver.h"
-#include "weather.h"
+#include "types.h"
 #include "util.h"
 
 /* Nombre del servidor */

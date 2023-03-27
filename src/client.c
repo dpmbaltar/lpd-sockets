@@ -19,7 +19,7 @@
 #endif
 
 #include "tcpclient.h"
-#include "weather.h"
+#include "types.h"
 #include "util.h"
 
 /* Host del servidor por defecto */

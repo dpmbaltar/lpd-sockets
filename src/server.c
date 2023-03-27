@@ -17,7 +17,7 @@
 
 #include "tcpserver.h"
 #include "tcpclient.h"
-#include "weather.h"
+#include "types.h"
 #include "util.h"
 
 /* Descripción del servidor */
