@@ -20,13 +20,6 @@
 
 #include "tcpclient.h"
 
-/* Macro para manejar errores */
-#define return_set_error_if(cond,error,code) \
-  if (cond) {\
-    g_set_error(error, TCP_CLIENT_ERROR, code, error_messages[code]);\
-    return NULL;\
-  }
-
 G_DEFINE_QUARK(tcp-client-error, tcp_client_error)
 
 typedef struct _TcpClientThreadArgs TcpClientThreadArgs;
@@ -48,6 +41,13 @@ static const char *error_messages[] = {
   [TCP_CLIENT_SOCK_ERROR]         = "Error al crear socket",
   [TCP_CLIENT_SOCK_CONNECT_ERROR] = "Error al abrir conexión con el socket",
 };
+
+/* Macro para manejar errores */
+#define return_set_error_if(cond, error, code) \
+  if (cond) {\
+    g_set_error(error, TCP_CLIENT_ERROR, code, error_messages[code]);\
+    return NULL;\
+  }
 
 TcpClient *tcp_client_new(const char *host, uint16_t port)
 {
