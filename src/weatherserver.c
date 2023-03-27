@@ -38,10 +38,10 @@
 #define SRV_DATA_TTL 3600
 
 /* Dirección del servidor */
-static in_addr_t addr = SRV_ADDR;
+static uint32_t addr = SRV_ADDR;
 
 /* Puerto del servidor */
-static in_port_t port = SRV_PORT;
+static uint16_t port = SRV_PORT;
 
 /* Opciones de línea de comandos */
 static GOptionEntry options[] =

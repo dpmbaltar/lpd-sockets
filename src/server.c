@@ -42,10 +42,10 @@
 #define SRV_RECV_MAX     20
 
 /* Dirección del servidor */
-static in_addr_t addr = SRV_ADDR;
+static uint32_t addr = SRV_ADDR;
 
 /* Puerto del servidor */
-static in_port_t port = SRV_PORT;
+static uint16_t port = SRV_PORT;
 
 /* Host del servidor */
 static char *weather_host = SRV_WEATHER_HOST;
