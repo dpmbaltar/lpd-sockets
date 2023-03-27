@@ -20,6 +20,15 @@
 
 #include "tcpclient.h"
 
+/* Macro para manejar errores */
+#define return_set_error_if(cond,error,code) \
+  if (cond) {\
+    g_set_error(error, TCP_CLIENT_ERROR, code, error_messages[code]);\
+    return NULL;\
+  }
+
+G_DEFINE_QUARK(tcp-client-error, tcp_client_error)
+
 struct _TcpClient
 {
   const char   *host;
@@ -27,6 +36,11 @@ struct _TcpClient
   TcpClientFunc func;
   gpointer      data;
   int           sock;
+};
+
+static const char *error_messages[] = {
+  [TCP_CLIENT_SOCK_ERROR]         = "Error al crear socket",
+  [TCP_CLIENT_SOCK_CONNECT_ERROR] = "Error al abrir conexión con el socket",
 };
 
 TcpClient *tcp_client_new(const char *host, uint16_t port)
@@ -102,12 +116,12 @@ GThread *tcp_client_run(TcpClient      *client,
 
   /* Crear socket */
   sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-  g_return_val_if_fail(sockfd != -1, NULL);
+  return_set_error_if(sockfd == -1, error, TCP_CLIENT_SOCK_ERROR);
   printf("Socket creado correctamente...\n");
 
   /* Conectar socket del cliente al socket del servidor */
   connected = connect(sockfd, (struct sockaddr*)&servaddr, servaddr_len);
-  g_return_val_if_fail(connected != -1, NULL);
+  return_set_error_if(connected == -1, error, TCP_CLIENT_SOCK_CONNECT_ERROR);
   printf("Conectado al servidor...\n");
 
   /* Preparar parámetros para función del cliente */
