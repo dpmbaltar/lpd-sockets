@@ -147,7 +147,7 @@ int main(int argc, char **argv)
     client_thread = tcp_client_run(client, client_func, buff, &error);
 
     if (error != NULL) {
-      fprintf(stderr, "%s", error->message);
+      fprintf(stderr, "%s\n", error->message);
       g_error_free(error);
       return EXIT_FAILURE;
     }
