@@ -23,8 +23,6 @@
 /* Define el dominio de errores TCP_CLIENT_ERROR */
 G_DEFINE_QUARK(tcp-client-error, tcp_client_error)
 
-typedef struct _TcpClientThreadArgs TcpClientThreadArgs;
-
 struct _TcpClient
 {
   const char *host;
@@ -37,6 +35,8 @@ struct _TcpClientThreadArgs
   gpointer      data;
   int           sock;
 };
+
+typedef struct _TcpClientThreadArgs TcpClientThreadArgs;
 
 /* Mensajes de error */
 static const char *error_messages[] = {
