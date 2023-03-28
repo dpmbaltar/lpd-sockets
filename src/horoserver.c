@@ -100,6 +100,8 @@ static void get_horoscope(AstroInfo *astro_info, int day, int sign)
     astro_data_day->sign_compat = g_rand_int_range(rand, 0, N_SIGNS);
     memcpy(astro_data_day->date_range, astro_date_ranges[sign], 4);
     /* TODO: mood_len y mood */
+    astro_data_day->mood = g_strdup("Mood test.");
+    astro_data_day->mood_len = strlen(astro_data_day->mood);
 
     astro_cache[day] = ts.tv_sec;
 
@@ -149,6 +151,7 @@ static void serve_horoscope(gpointer data, gpointer user_data)
 
   int arg_day = -1;
   int arg_sign = 0;
+  int send_len = SRV_SEND_MAX;
   char recv_buff[SRV_RECV_MAX];
   char send_buff[SRV_SEND_MAX];
 
@@ -166,21 +169,41 @@ static void serve_horoscope(gpointer data, gpointer user_data)
   /* Preparar datos para el envío */
   if (arg_day != -1) {
     AstroInfo astro_info = ASTRO_INFO_INIT;
+    send_len = ASTRO_INFO_FSIZE(&astro_info);
     get_horoscope(&astro_info, arg_day, arg_sign);
-    memcpy(send_buff, &astro_info, sizeof(astro_info)); //FIXME: tamaño variable
-    printf("Mensaje enviado: {%d, %d, %d/%d - %d/%d, ...}\n",
+    memcpy(send_buff, &astro_info, send_len);
+
+    if (astro_info.mood_len > 0 && astro_info.mood != NULL) {
+      int mood_start = send_len;
+      send_len = ASTRO_INFO_DSIZE(&astro_info);
+
+      /* Acortar cadena si excede el máximo del búfer de envío de datos */
+      if (send_len > SRV_SEND_MAX) {
+        astro_info.mood_len = SRV_SEND_MAX - ASTRO_INFO_FSIZE(&astro_info);
+      }
+
+      memcpy(&send_buff[mood_start], astro_info.mood, astro_info.mood_len);
+    } else {
+      send_len = ASTRO_INFO_FSIZE(&astro_info);
+    }
+
+    printf("Mensaje enviado: {%d, %d, %d/%d - %d/%d, %.*s}\n",
            astro_info.sign,
            astro_info.sign_compat,
            astro_info.date_range[0],
            astro_info.date_range[1],
            astro_info.date_range[2],
-           astro_info.date_range[3]);
+           astro_info.date_range[3],
+           astro_info.mood_len,
+           astro_info.mood);
+    printf("AstroInfo size = %lli\n", sizeof(astro_info));
+    printf("send_len = %d\n", send_len);
   }
 
   /* Enviar datos al cliente */
-  send(connfd, send_buff, sizeof(send_buff), 0);
+  send(connfd, send_buff, send_len, 0);
   printf("Bytes enviados:\n");
-  printx_bytes(send_buff, (int)sizeof(send_buff));
+  printx_bytes(send_buff, send_len);
 
   /* Cerrar conexión */
   close(connfd);
