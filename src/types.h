@@ -6,6 +6,8 @@
 #define DATE_INIT         { 0, 0, 0 }
 /* Inicializador para AstroInfo */
 #define ASTRO_INFO_INIT   { 0, 0, {0}, 0, 0L }
+/* Inicializador para AstroQuery */
+#define ASTRO_QUERY_INIT  { DATE_INIT, 0 }
 /* Inicializador para WeatherInfo */
 #define WEATHER_INFO_INIT { {0}, 0, 0.0F }
 /* Inicializador para Request */
@@ -46,6 +48,13 @@ typedef struct _AstroInfo
   uint32_t  mood_len;
   uint8_t  *mood;
 } AstroInfo;
+
+/* Estructura para solicitar datos del horóscopo */
+typedef struct _AstroQuery
+{
+  Date      date;
+  AstroSign sign;
+} AstroQuery;
 
 /* Condiciones del clima */
 typedef enum _WeatherCond {
