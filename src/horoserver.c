@@ -57,7 +57,7 @@ static GOptionEntry options[] =
 };
 
 /* Rangos de fechas para los signos */
-static const char *astro_date_ranges[N_SIGNS][2][2] =
+static const char astro_date_ranges[N_SIGNS][2][2] =
 {
   { { 3, 21 }, { 4, 19 } },
   { { 4, 20 }, { 5, 20 } },
@@ -74,12 +74,12 @@ static const char *astro_date_ranges[N_SIGNS][2][2] =
 };
 
 /* Caché de datos del horóscopo */
-static AstroInfo astro_data[H_MAX_DAYS][N_SIGNS] = { {0} };
+static AstroInfo astro_data[H_MAX_DAYS][N_SIGNS] = { 0 };
 
 /* Marcas de tiempo de la caché */
 static time_t astro_cache[H_MAX_DAYS] = { 0 };
 
-static void get_horoscope(AstroInfo *astro_info, char day, unsigned char sign)
+static void get_horoscope(AstroInfo *astro_info, int day, int sign)
 {
   static GMutex mutex;
   struct timeval ts;
@@ -93,6 +93,7 @@ static void get_horoscope(AstroInfo *astro_info, char day, unsigned char sign)
 
   if ((ts.tv_sec - astro_cache[day]) > SRV_DATA_TTL) {
     AstroInfo *astro_data_day = &astro_data[day][sign];
+    GRand *rand = g_rand_new();
 
     /* Generar datos aleatorios */
     astro_data_day->sign = sign;
@@ -101,6 +102,8 @@ static void get_horoscope(AstroInfo *astro_info, char day, unsigned char sign)
     /* TODO: mood_len y mood */
 
     astro_cache[day] = ts.tv_sec;
+
+    g_rand_free(rand);
   }
 
   memcpy(astro_info, &astro_data[day][sign], sizeof(astro_data[day][sign]));
@@ -139,12 +142,13 @@ static int get_client_arg(const char *str, unsigned int len)
   return day;
 }
 
-static void serve_weather(gpointer data, gpointer user_data)
+static void serve_horoscope(gpointer data, gpointer user_data)
 {
   int connfd = GPOINTER_TO_INT(data);
   g_return_if_fail(connfd != -1);
 
-  int weather_day = -1;
+  int arg_day = -1;
+  int arg_sign = 0;
   char recv_buff[SRV_RECV_MAX];
   char send_buff[SRV_SEND_MAX];
 
@@ -157,15 +161,20 @@ static void serve_weather(gpointer data, gpointer user_data)
   printx_bytes(recv_buff, (int)sizeof(recv_buff));
 
   /* Analizar datos recibidos */
-  weather_day = get_client_arg(recv_buff, (int)sizeof(recv_buff));
+  arg_day = get_client_arg(recv_buff, (int)sizeof(recv_buff));
 
   /* Preparar datos para el envío */
-  if (weather_day != -1) {
-    WeatherInfo weather = WEATHER_INFO_INIT;
-    get_weather(&weather, weather_day);
-    memcpy(send_buff, &weather, sizeof(weather));
-    printf("Mensaje enviado: {%s, %d, %.1f}\n", weather.date, weather.cond,
-           weather.temp);
+  if (arg_day != -1) {
+    AstroInfo astro_info = ASTRO_INFO_INIT;
+    get_horoscope(&astro_info, arg_day, arg_sign);
+    memcpy(send_buff, &astro_info, sizeof(astro_info)); //FIXME: tamaño variable
+    printf("Mensaje enviado: {%d, %d, %d/%d - %d/%d, ...}\n",
+           astro_info.sign,
+           astro_info.sign_compat,
+           astro_info.date_range[0],
+           astro_info.date_range[1],
+           astro_info.date_range[2],
+           astro_info.date_range[3]);
   }
 
   /* Enviar datos al cliente */
@@ -183,31 +192,38 @@ int main(int argc, char **argv)
   GError         *error = NULL;
   GOptionContext *context;
   TcpServer      *server;
+  bool            options_parsed = FALSE;
 
   context = g_option_context_new(SRV_INFO);
   g_option_context_add_main_entries(context, options, NULL);
+  options_parsed = g_option_context_parse(context, &argc, &argv, &error);
+  g_option_context_free(context);
 
-  if (!g_option_context_parse(context, &argc, &argv, &error)) {
-    fprintf(stderr, "%s\n", error->message);
+  if (!options_parsed) {
+    perror("Error al obtener opciones");
+  }
+
+  if (error != NULL) {
+    perror(error->message);
+    g_error_free(error);
     return EXIT_FAILURE;
   }
 
   if (port <= 1024) {
-    fprintf(stderr, "El puerto debe ser mayor a 1024\n");
+    perror("El puerto debe ser mayor a 1024");
     return EXIT_FAILURE;
   }
 
   printf("Iniciando %s...\n", SRV_NAME);
-  server = tcp_server_new(addr, port, serve_weather, NULL);
+  server = tcp_server_new(addr, port, serve_horoscope, NULL);
   tcp_server_run(server, &error);
+  tcp_server_free(server);
 
   if (error != NULL) {
-    fprintf(stderr, "%s", error->message);
+    perror(error->message);
+    g_error_free(error);
     return EXIT_FAILURE;
   }
-
-  tcp_server_free(server);
-  g_option_context_free(context);
 
   return EXIT_SUCCESS;
 }
