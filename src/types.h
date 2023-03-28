@@ -13,6 +13,11 @@
 /* Inicializador para Request */
 #define REQUEST_INIT      { 0L, 0L, 0, 0 }
 
+/* Obtiene tamaño fijo de AstroInfo sin mood */
+#define ASTRO_INFO_FSIZE(a) (sizeof(AstroInfo)-sizeof(((AstroInfo*)0)->mood))
+/* Obtiene tamaño dinámico de AstroInfo según mood_len para mood */
+#define ASTRO_INFO_DSIZE(a) (ASTRO_INFO_FSIZE(a)+((AstroInfo*)(a))->mood_len)
+
 /* Estructura para recibir fechas */
 typedef struct _Date
 {
@@ -40,13 +45,13 @@ typedef enum _AstroSign
 } AstroSign;
 
 /* Estructura para información del horóscopo */
-typedef struct _AstroInfo
+typedef struct __attribute__((__packed__)) _AstroInfo
 {
   uint8_t   sign;
   uint8_t   sign_compat;
   uint8_t   date_range[4]; /* i.e { mes, día, mes, día }*/
   uint32_t  mood_len;
-  uint8_t  *mood;
+  char     *mood;
 } AstroInfo;
 
 /* Estructura para solicitar datos del horóscopo */
