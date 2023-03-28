@@ -44,7 +44,7 @@ typedef struct _AstroInfo
 {
   uint8_t   sign;
   uint8_t   sign_compat;
-  uint8_t   date_range[4];
+  uint8_t   date_range[4]; /* i.e { mes, día, mes, día }*/
   uint32_t  mood_len;
   uint8_t  *mood;
 } AstroInfo;
