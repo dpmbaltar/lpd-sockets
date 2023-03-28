@@ -14,6 +14,12 @@ weather_server_sources = [
   'tcpserver.c',
 ]
 
+hosroscope_server_sources = [
+  'horoserver.c',
+  'tcpserver.c',
+]
+
 executable('client', client_sources)
 executable('server', server_sources)
 executable('weather_server', weather_server_sources)
+executable('horoscope_server', hosroscope_server_sources)
