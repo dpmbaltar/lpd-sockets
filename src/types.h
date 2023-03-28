@@ -3,11 +3,13 @@
 #include <stdint.h>
 
 /* Inicializador para Date */
-#define DATE_INIT         {(uint16_t)0,(uint8_t)0,(uint8_t)0}
+#define DATE_INIT         { 0, 0, 0 }
+/* Inicializador para AstroInfo */
+#define ASTRO_INFO_INIT   { 0, 0, {0}, 0, 0L }
 /* Inicializador para WeatherInfo */
-#define WEATHER_INFO_INIT {{(char)0},(char)0,(float)(0.0F)}
+#define WEATHER_INFO_INIT { {0}, 0, 0.0F }
 /* Inicializador para Request */
-#define REQUEST_INIT      {(char*)0,(char*)0,(int)0,(int)0}
+#define REQUEST_INIT      { 0L, 0L, 0, 0 }
 
 /* Estructura para recibir fechas */
 typedef struct _Date
@@ -38,12 +40,11 @@ typedef enum _AstroSign
 /* Estructura para información del horóscopo */
 typedef struct _AstroInfo
 {
-  char sign;
-  char sign_compat;
-  char date_from[10];
-  char date_to[10];
-  char color[10];
-  char mood[20];
+  uint8_t   sign;
+  uint8_t   sign_compat;
+  uint8_t   date_range[4];
+  uint32_t  mood_len;
+  uint8_t  *mood;
 } AstroInfo;
 
 /* Condiciones del clima */
