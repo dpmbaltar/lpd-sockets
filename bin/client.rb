@@ -5,11 +5,11 @@ require 'ostruct'
 require 'socket'
 
 # Opciones de línea de comandos
-options = OpenStruct.new {
-  :host => 'localhost'
-  :port => 24000
+options = OpenStruct.new(
+  :host => 'localhost',
+  :port => 24000,
   :type => 'SP'
-}
+)
 
 # Obtener opciones
 OptionParser.new do |arg|
