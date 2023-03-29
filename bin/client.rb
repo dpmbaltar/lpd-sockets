@@ -24,6 +24,16 @@ OptionParser.new do |arg|
   end
 end.parse!
 
+# Condiciones del clima
+WeatherCond = [
+  'Despejado',
+  'Nublado',
+  'Neblina',
+  'Lluvia',
+  'Chubascos',
+  'Nieve'
+]
+
 # Estructura de datos del clima
 WeatherInfo = Struct.new :date, :temp, :cond do
   attr_accessor :date, :temp, :cond
@@ -37,15 +47,7 @@ WeatherInfo = Struct.new :date, :temp, :cond do
     self
   end
   def cond_str
-    case @cond
-    when 0 then 'Despejado'
-    when 1 then 'Nublado'
-    when 2 then 'Neblina'
-    when 3 then 'Lluvia'
-    when 4 then 'Chubascos'
-    when 5 then 'Nieve'
-    else 'Desconocida'
-    end
+    WeatherCond[@cond]
   end
 end
 
