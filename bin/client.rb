@@ -48,6 +48,22 @@ WeatherInfo = Struct.new :date, :temp, :cond do
   end
 end
 
+# Signos
+AstroSign = [
+  'Aries',
+  'Tauro',
+  'Geminis',
+  'Cancer',
+  'Leo',
+  'Virgo',
+  'Libra',
+  'Scorpio',
+  'Sagitario',
+  'Capricornio',
+  'Acuario',
+  'Piscis'
+]
+
 # Estructura de datos del horóscopo
 AstroInfo = Struct.new :sign, :sign_compat, :date_range, :mood do
   attr_accessor :sign, :sign_compat, :mood
@@ -69,27 +85,10 @@ AstroInfo = Struct.new :sign, :sign_compat, :date_range, :mood do
     "%02d/%02d" % [@date_range[3], @date_range[2]]
   end
   def sign_s
-    sign_to_s @sign
+    AstroSign[@sign]
   end
   def sign_compat_s
-    sign_to_s @sign_compat
-  end
-  def sign_to_s sign
-    case sign
-    when 0 then 'Aries'
-    when 1 then 'Tauro'
-    when 2 then 'Gemini'
-    when 3 then 'Cancer'
-    when 4 then 'Leo'
-    when 5 then 'Virgo'
-    when 6 then 'Libra'
-    when 7 then 'Scorpio'
-    when 8 then 'Sagitario'
-    when 9 then 'Capricornio'
-    when 10 then 'Acuario'
-    when 11 then 'Piscis'
-    else 'Desconocido'
-    end
+    AstroSign[@sign_compat]
   end
 end
 
