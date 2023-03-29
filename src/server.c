@@ -30,6 +30,10 @@
 #define SRV_WEATHER_HOST "127.0.0.1"
 /* Puerto del servidor del clima por defecto */
 #define SRV_WEATHER_PORT 24001
+/* Host del servidor del horóscopo por defecto */
+#define SRV_HOROS_HOST   "127.0.0.1"
+/* Puerto del servidor del horóscopo por defecto */
+#define SRV_HOROS_PORT   24002
 /* Cantidad máxima de conexiones por defecto */
 #define SRV_MAX_CONN     10
 /* Cantidad máxima de hilos por defecto (0 = g_get_num_processors()) */
@@ -37,7 +41,7 @@
 /* Indica si se usan hilos exclusivos (no por defecto) */
 #define SRV_EXC_THREADS  false
 /* Cantidad máxima para envío de bytes */
-#define SRV_SEND_MAX     80
+#define SRV_SEND_MAX     255
 /* Cantidad máxima para recepción de bytes */
 #define SRV_RECV_MAX     20
 
@@ -47,11 +51,17 @@ static uint32_t addr = SRV_ADDR;
 /* Puerto del servidor */
 static uint16_t port = SRV_PORT;
 
-/* Host del servidor */
+/* Host del servidor del clima */
 static char *weather_host = SRV_WEATHER_HOST;
 
-/* Puerto del servidor */
+/* Puerto del servidor del clima*/
 static uint16_t weather_port = SRV_WEATHER_PORT;
+
+/* Host del servidor del horóscopo */
+static char *horoscope_host = SRV_HOROS_HOST;
+
+/* Puerto del servidor del horóscopo*/
+static uint16_t horoscope_port = SRV_HOROS_PORT;
 
 /* Máximo de conexiones */
 static int max_conn = SRV_MAX_CONN;
@@ -69,6 +79,8 @@ static GOptionEntry options[] =
   { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Puerto P > 1024 del servidor (24000 por defecto)", "P" },
   { "weather-host", 'w', 0, G_OPTION_ARG_STRING, &weather_host, "Host WH del servidor del clima (localhost por defecto)", "WH" },
   { "weather-port", 'W', 0, G_OPTION_ARG_INT, &weather_port, "Puerto WP > 1024 del servidor del clima (24001 por defecto)", "WP" },
+  { "horoscope-host", 's', 0, G_OPTION_ARG_STRING, &horoscope_host, "Host SH del servidor del horoscopo (localhost por defecto)", "SH" },
+  { "horoscope-port", 'S', 0, G_OPTION_ARG_INT, &horoscope_port, "Puerto SP > 1024 del servidor del horoscopo (24002 por defecto)", "SP" },
   { "max-conn", 'c', 0, G_OPTION_ARG_INT, &max_conn, "Aceptar hasta C conexiones (10 por defecto)", "C" },
   { "max-threads", 't', 0, G_OPTION_ARG_INT, &max_threads, "Usar hasta T hilos o -1 sin limites (usar cantidad de procesadores por defecto)", "T" },
   { "exclusive", 'e', 0, G_OPTION_ARG_NONE, &exclusive, "Usar hilos exclusivos (falso por defecto)", NULL },
@@ -77,6 +89,9 @@ static GOptionEntry options[] =
 
 /* Cliente para el servidor del clima */
 static TcpClient *weather_client = NULL;
+
+/* Cliente para el servidor del horóscopo */
+static TcpClient *horoscope_client = NULL;
 
 static void *get_weather(int sockfd, gpointer _request)
 {
@@ -182,6 +197,7 @@ int main(int argc, char **argv)
   }
 
   weather_client = tcp_client_new(weather_host, weather_port);
+  horoscope_client = tcp_client_new(horoscope_host, horoscope_port);
   server = tcp_server_new_full(addr, port, serve, NULL, max_conn, max_threads,
                                exclusive);
   tcp_server_run(server, &error);
@@ -192,6 +208,8 @@ int main(int argc, char **argv)
   }
 
   tcp_server_free(server);
+  tcp_client_free(weather_client);
+  tcp_client_free(horoscope_client);
   g_option_context_free(context);
 
   return EXIT_SUCCESS;
