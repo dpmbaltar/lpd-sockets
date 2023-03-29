@@ -25,9 +25,7 @@ executable('weather_server', weather_server_sources)
 executable('horoscope_server', hosroscope_server_sources)
 
 run_command(
-  find_program(
-    join_paths(meson.source_root(), 'buildaux', 'meson', 'copy.rb')
-  ),
+  find_program(join_paths(buildaux, 'meson', 'copy.rb')),
   'horoscope.txt',
   'horoscope.txt',
   check: true
