@@ -41,6 +41,10 @@
 #define H_MIN_DAYS 0
 /* Máximo de días para el horóscopo, a partir de la fecha actual */
 #define H_MAX_DAYS 7
+/* Máximo de información para el horóscopo (i.e. mood_len/mood de AstroInfo) */
+#define H_MOOD_MAX 255
+/* Archivo de datos del horóscopo */
+#define H_FILENAME "horoscope.txt"
 
 /* Dirección del servidor */
 static uint32_t addr = SRV_ADDR;
@@ -48,36 +52,57 @@ static uint32_t addr = SRV_ADDR;
 /* Puerto del servidor */
 static uint16_t port = SRV_PORT;
 
+/* Archivo de datos del horóscopo */
+static char *horoscope_file = NULL;
+
 /* Opciones de línea de comandos */
 static GOptionEntry options[] =
 {
   { "addr", 'a', 0, G_OPTION_ARG_INT, &addr, "Direccion (0=INADDR_ANY)", "A" },
   { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Puerto (>1024)", "P" },
+  { "horoscope-file", 'f', 0, G_OPTION_ARG_FILENAME, &horoscope_file, "Archivo de datos del horóscopo", "F"},
   { NULL }
 };
 
 /* Rangos de fechas para los signos */
-static const char astro_date_ranges[N_SIGNS][2][2] =
+static const char astro_date_ranges[N_SIGNS][4] =
 {
-  { { 3, 21 }, { 4, 19 } },
-  { { 4, 20 }, { 5, 20 } },
-  { { 5, 21 }, { 6, 21 } },
-  { { 6, 22 }, { 7, 22 } },
-  { { 7, 23 }, { 8, 22 } },
-  { { 8, 23 }, { 9, 22 } },
-  { { 9, 23 }, { 10, 22 } },
-  { { 10, 23 }, { 11, 22 } },
-  { { 11, 23 }, { 12, 21 } },
-  { { 12, 22 }, { 1, 19 } },
-  { { 1, 20 }, { 2, 18 } },
-  { { 2, 19 }, { 3, 20 } }
+  { 3, 21, 4, 19 },
+  { 4, 20, 5, 20 },
+  { 5, 21, 6, 21 },
+  { 6, 22, 7, 22 },
+  { 7, 23, 8, 22 },
+  { 8, 23, 9, 22 },
+  { 9, 23, 10, 22 },
+  { 10, 23, 11, 22 },
+  { 11, 23, 12, 21 },
+  { 12, 22, 1, 19 },
+  { 1, 20, 2, 18 },
+  { 2, 19, 3, 20 }
 };
+
+/* Datos del horóscopo que se cargan de un archivo dado */
+static char astro_moods[N_SIGNS][H_MOOD_MAX] = { 0 };
 
 /* Caché de datos del horóscopo */
 static AstroInfo astro_data[H_MAX_DAYS][N_SIGNS] = { 0 };
 
 /* Marcas de tiempo de la caché */
 static time_t astro_cache[H_MAX_DAYS] = { 0 };
+
+static void create_horoscope(AstroInfo *astro_info, int sign)
+{
+  GRand *rand = g_rand_new();
+  int mood_num = g_rand_int_range(rand, 0, N_SIGNS);
+
+  astro_info->sign = sign;
+  astro_info->sign_compat = g_rand_int_range(rand, 0, N_SIGNS);
+  astro_info->mood = g_strdup(astro_moods[mood_num]); /* Liberar con g_free() */
+  astro_info->mood_len = strlen(astro_info->mood);
+  memcpy(astro_info->date_range, astro_date_ranges[astro_info->sign], 4);
+
+  g_free(rand);
+}
 
 static void get_horoscope(AstroInfo *astro_info, int day, int sign)
 {
@@ -92,20 +117,15 @@ static void get_horoscope(AstroInfo *astro_info, int day, int sign)
   g_mutex_lock(&mutex);
 
   if ((ts.tv_sec - astro_cache[day]) > SRV_DATA_TTL) {
-    AstroInfo *astro_data_day = &astro_data[day][sign];
-    GRand *rand = g_rand_new();
+    if (astro_data[day][sign].mood != NULL) {
+      g_free(astro_data[day][sign].mood);
+    }
 
-    /* Generar datos aleatorios */
-    astro_data_day->sign = sign;
-    astro_data_day->sign_compat = g_rand_int_range(rand, 0, N_SIGNS);
-    memcpy(astro_data_day->date_range, astro_date_ranges[sign], 4);
-    /* TODO: mood_len y mood */
-    astro_data_day->mood = g_strdup("Mood test.");
-    astro_data_day->mood_len = strlen(astro_data_day->mood);
+    AstroInfo astro_info_day = ASTRO_INFO_INIT;
+    create_horoscope(&astro_info_day, sign);
+    memcpy(&astro_data[day][sign], &astro_info_day, sizeof(astro_info_day));
 
     astro_cache[day] = ts.tv_sec;
-
-    g_rand_free(rand);
   }
 
   memcpy(astro_info, &astro_data[day][sign], sizeof(astro_data[day][sign]));
@@ -173,11 +193,12 @@ static void serve_horoscope(gpointer data, gpointer user_data)
     get_horoscope(&astro_info, arg_day, arg_sign);
     memcpy(send_buff, &astro_info, send_len);
 
+    /* Ajustar cantidad de datos a enviar según el tamaño de AstroInfo.mood */
     if (astro_info.mood_len > 0 && astro_info.mood != NULL) {
       int mood_start = send_len;
       send_len = ASTRO_INFO_DSIZE(&astro_info);
 
-      /* Acortar cadena si excede el máximo del búfer de envío de datos */
+      /* Acortar datos si excede el máximo del búfer de envío de datos */
       if (send_len > SRV_SEND_MAX) {
         astro_info.mood_len = SRV_SEND_MAX - ASTRO_INFO_FSIZE(&astro_info);
       }
@@ -196,13 +217,11 @@ static void serve_horoscope(gpointer data, gpointer user_data)
            astro_info.date_range[3],
            astro_info.mood_len,
            astro_info.mood);
-    printf("AstroInfo size = %lli\n", sizeof(astro_info));
-    printf("send_len = %d\n", send_len);
   }
 
   /* Enviar datos al cliente */
   send(connfd, send_buff, send_len, 0);
-  printf("Bytes enviados:\n");
+  printf("Bytes enviados (%d):\n", send_len);
   printx_bytes(send_buff, send_len);
 
   /* Cerrar conexión */
@@ -223,17 +242,39 @@ int main(int argc, char **argv)
   g_option_context_free(context);
 
   if (!options_parsed) {
-    perror("Error al obtener opciones");
+    fprintf(stderr, "Error al obtener opciones\n");
   }
 
   if (error != NULL) {
-    perror(error->message);
+    fprintf(stderr, "%s\n", error->message);
     g_error_free(error);
     return EXIT_FAILURE;
   }
 
+  if (horoscope_file == NULL) {
+    horoscope_file = H_FILENAME;
+    printf("No se indica un archivo para datos del horóscopo\n");
+  }
+
+  /* Leer datos del horóscopo desde archivo */
+  int file_line = 0;
+  char file_buf[H_MOOD_MAX];
+  FILE *file = fopen(horoscope_file, "r");
+  if (file == NULL) {
+    perror(horoscope_file);
+    return EXIT_FAILURE;
+  } else {
+    memset(file_buf, 0, sizeof(file_buf));
+    while (fgets(file_buf, sizeof(file_buf), file) && file_line < N_SIGNS) {
+      memcpy(&astro_moods[file_line], file_buf, sizeof(file_buf));
+      memset(file_buf, 0, sizeof(file_buf));
+      file_line++;
+    }
+    fclose(file);
+  }
+
   if (port <= 1024) {
-    perror("El puerto debe ser mayor a 1024");
+    fprintf(stderr, "El puerto debe ser mayor a 1024\n");
     return EXIT_FAILURE;
   }
 
@@ -243,7 +284,7 @@ int main(int argc, char **argv)
   tcp_server_free(server);
 
   if (error != NULL) {
-    perror(error->message);
+    fprintf(stderr, "%s\n", error->message);
     g_error_free(error);
     return EXIT_FAILURE;
   }
