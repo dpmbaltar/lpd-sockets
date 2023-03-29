@@ -15,7 +15,7 @@ weather_server_sources = [
 ]
 
 hosroscope_server_sources = [
-  'horoserver.c',
+  'horoscopeserver.c',
   'tcpserver.c',
 ]
 
@@ -29,5 +29,6 @@ run_command(
     join_paths(meson.source_root(), 'buildaux', 'meson', 'copy.rb')
   ),
   'horoscope.txt',
-  'horoscope.txt'
+  'horoscope.txt',
+  check: true
 )
