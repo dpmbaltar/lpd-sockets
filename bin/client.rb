@@ -138,13 +138,14 @@ loop do
   message = gets
   break if message.chomp.downcase == 'salir'
 
-  # Manejar fechas para el servidor
-  if message.match? /[0-9]{4}-[0-9]{2}-[0-9]{2}/ then
-    parts = message.split('-').map { |s| s.to_i }
+  # Manejar datos ingresados para el servidor
+  message.match /(\d{4})-(\d{1,2})-(\d{1,2})(?:[\s]+([\d]))?/ do |m|
+    parts = m.captures.map { |v| v.to_i }
     message = [
       parts[0,1].pack('S'),
       parts[1,1].pack('C'),
-      parts[2,1].pack('C')
+      parts[2,1].pack('C'),
+      parts[3,1].pack('C'),
     ].join
   end
 
