@@ -69,7 +69,7 @@ AstroSign = [
 
 # Estructura de datos del horóscopo
 AstroInfo = Struct.new :sign, :sign_compat, :date_range, :mood do
-  attr_accessor :sign, :sign_compat, :mood
+  attr_accessor :sign, :sign_compat, :date_range, :mood
   def self.size
     10
   end
@@ -80,12 +80,6 @@ AstroInfo = Struct.new :sign, :sign_compat, :date_range, :mood do
     mood_len = data[6,4].unpack('L').join.to_i
     @mood = data[10,mood_len]
     self
-  end
-  def range_from
-    "%02d/%02d" % [@date_range[1], @date_range[0]]
-  end
-  def range_to
-    "%02d/%02d" % [@date_range[3], @date_range[2]]
   end
   def sign_s
     AstroSign[@sign]
@@ -106,11 +100,11 @@ module Client
     # Leer bytes en struct AstroInfo, si hay suficientes datos
     if response.bytesize >= AstroInfo.size then
       info = AstroInfo.new.unpack response
-      if not info.range_from.empty? then
+      if not info.date_range.empty? then
         puts 'Datos del horóscopo recibidos:'
         puts '- Signo: %d (%s)' % [info.sign, info.sign_s]
         puts '- Compat.: %d (%s)' % [info.sign_compat, info.sign_compat_s]
-        puts '- Rango de fechas: %s - %s' % [info.range_from, info.range_to]
+        puts '- Fechas: %d/%d - %d/%d' % info.date_range
         puts '- Estado: %s' % info.mood
       else
         puts 'Datos recibidos no válidos'
