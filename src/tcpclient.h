@@ -1,20 +1,38 @@
+/**
+ * @file tcpclient.h
+ * @author Diego Pablo Matias Baltar (diego.baltar@est.fi.uncoma.edu.ar)
+ * @brief Funciones para ejecutar un cliente TCP
+ * @version 0.1
+ * @date 2023-03-29
+ *
+ * @copyright Copyright (c) 2023
+ */
 #pragma once
 
 #include <glib.h>
 #include <stdint.h>
 
+/** @brief Dominio de errores para funciones de TcpClient */
 #define TCP_CLIENT_ERROR (tcp_client_error_quark())
 
-/* Códigos de error de TcpClient */
+/** @brief Códigos de error para funciones de TcpClient */
 typedef enum _TcpClientError
 {
   TCP_CLIENT_SOCK_ERROR,
   TCP_CLIENT_SOCK_CONNECT_ERROR,
 } TcpClientError;
 
+/** @brief Representa una configuración para un cliente TCP */
 typedef struct _TcpClient TcpClient;
 
-typedef void* (*TcpClientFunc)          (int             sockfd,
+/**
+ * @brief Tipo de función para ejecutar en @link tcp_client_run()
+ * @see tcp_client_run()
+ * @param sockfd conexión TCP
+ * @param data puntero a datos opcionales
+ * @return el resultado de la función
+ */
+typedef void *(*TcpClientFunc)          (int             sockfd,
                                          gpointer        data);
 
 TcpClient      *tcp_client_new          (const char     *host,

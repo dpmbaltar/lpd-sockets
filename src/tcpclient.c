@@ -25,6 +25,7 @@ G_DEFINE_QUARK(tcp-client-error, tcp_client_error)
 
 struct _TcpClient
 {
+  /** @privatesection */
   const char *host;
   uint16_t    port;
 };
