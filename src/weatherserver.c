@@ -1,4 +1,6 @@
 #include <glib.h>
+#include <glib-object.h>
+#include <json-glib/json-glib.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -33,7 +35,7 @@
 /* Cantidad máxima para envío de bytes */
 #define SRV_SEND_MAX 16
 /* Cantidad máxima para recepción de bytes */
-#define SRV_RECV_MAX 4
+#define SRV_RECV_MAX 255
 /* TTL para datos del clima (segundos) */
 #define SRV_DATA_TTL 3600
 
@@ -61,6 +63,9 @@ static GOptionEntry options[] =
   { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Puerto (>1024)", "P" },
   { NULL }
 };
+
+/* Instancia de JsonParser */
+static JsonParser *json_parser = NULL;
 
 /* Caché de datos del clima */
 static WeatherInfo weather_data[W_MAX_DAYS] = { 0 };
@@ -101,33 +106,71 @@ static void get_weather(WeatherInfo *weather_info, int day)
   g_mutex_unlock(&mutex);
 }
 
-static int get_client_arg(const char *str, unsigned int len)
+static JsonNode *parse_json(const char *data, int length)
 {
+  GError *error = NULL;
+
+  g_return_val_if_fail(data != NULL, NULL);
+
+  json_parser_load_from_data(json_parser, data, length, &error);
+
+  if (error != NULL) {
+    g_print("Error al obtener JSON `%s`: %s\n", data, error->message);
+    g_error_free(error);
+    return NULL;
+  }
+
+  return json_parser_steal_root(json_parser);
+}
+
+static GDate *parse_date(const char *data)
+{
+  GDate *date;
+
+  g_return_val_if_fail(data != NULL, NULL);
+
+  date = g_date_new();
+  g_date_set_parse(date, data);
+
+  if (!g_date_valid(date)) {
+    g_date_free(date);
+    date = NULL;
+  }
+
+  return date;
+}
+
+static int get_client_arg(const char *data, int length)
+{
+  struct timeval time;
   int day = -1;
-  Date date = DATE_INIT;
-  GDateTime *dt_arg;
-  GDateTime *dt_now;
-  GDateTime *dt_today;
-  GTimeSpan dt_diff = 0;
+  const char *date_str = NULL;
+  GDate *date = NULL;
+  GDate *today = NULL;
+  JsonNode *json_node = NULL;
+  JsonObject *json_object = NULL;
 
-  g_return_val_if_fail(str != NULL, day);
-  g_return_val_if_fail(len != 0 || len < sizeof(Date), day);
+  g_return_val_if_fail(data != NULL, -1);
+  g_return_val_if_fail(length > 0, -1);
 
-  memcpy(&date, str, sizeof(Date));
-  dt_arg = g_date_time_new_local(date.year, date.month, date.day, 0, 0, 0);
+  json_node = parse_json(data, length);
+  json_object = json_node_get_object(json_node);
+  date_str = json_object_get_string_member(json_object, "date");
+  date = parse_date(date_str);
 
-  if (dt_arg != NULL) {
-    dt_now = g_date_time_new_now_local();
-    dt_today = g_date_time_new_local(g_date_time_get_year(dt_now),
-                                     g_date_time_get_month(dt_now),
-                                     g_date_time_get_day_of_month(dt_now),
-                                     0, 0, 0);
-    dt_diff = g_date_time_difference(dt_arg, dt_today);
-    day = dt_diff / G_TIME_SPAN_DAY;
+  if (date != NULL) {
+    today = g_date_new();
+    gettimeofday(&time, NULL);
+    g_date_set_time_t(today, time.tv_sec);
+    day = g_date_days_between(today, date);
+    printf("Date: %s\n", date_str);
+    printf("Today: %d-%d-%d\n", g_date_get_year(today),
+                                g_date_get_month(today),
+                                g_date_get_day(today));
+    printf("Days between: %d\n", day);
 
-    g_date_time_unref(dt_arg);
-    g_date_time_unref(dt_now);
-    g_date_time_unref(dt_today);
+    g_date_free(date);
+    g_date_free(today);
   }
 
   return day;
@@ -151,7 +194,7 @@ static void serve_weather(gpointer data, gpointer user_data)
   printx_bytes(recv_buff, (int)sizeof(recv_buff));
 
   /* Analizar datos recibidos */
-  weather_day = get_client_arg(recv_buff, (int)sizeof(recv_buff));
+  weather_day = get_client_arg(recv_buff, strlen(recv_buff));
 
   /* Preparar datos para el envío */
   if (weather_day != -1) {
@@ -191,6 +234,7 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  json_parser = json_parser_new();
   printf("Iniciando %s...\n", SRV_NAME);
   server = tcp_server_new(addr, port, serve_weather, NULL);
   tcp_server_run(server, &error);
@@ -202,6 +246,7 @@ int main(int argc, char **argv)
 
   tcp_server_free(server);
   g_option_context_free(context);
+  g_object_unref(json_parser);
 
   return EXIT_SUCCESS;
 }
