@@ -1,33 +1,42 @@
+/**
+ * @file types.h
+ * @author Diego Pablo Matias Baltar (diego.baltar@est.fi.uncoma.edu.ar)
+ * @brief Estructuras utilizadas para la transmisión de datos
+ * @version 0.1
+ * @date 2023-03-29
+ *
+ * @copyright Copyright (c) 2023
+ */
 #pragma once
 
 #include <stdint.h>
 
-/* Inicializador para Date */
+/** @brief Inicializador para Date */
 #define DATE_INIT         { 0, 0, 0 }
-/* Inicializador para AstroInfo */
+/** @brief Inicializador para AstroInfo */
 #define ASTRO_INFO_INIT   { 0, 0, {0}, 0, 0L }
-/* Inicializador para AstroQuery */
+/** @brief Inicializador para AstroQuery */
 #define ASTRO_QUERY_INIT  { DATE_INIT, 0 }
-/* Inicializador para WeatherInfo */
+/** @brief Inicializador para WeatherInfo */
 #define WEATHER_INFO_INIT { {0}, 0, 0.0F }
-/* Inicializador para Request */
+/** @brief Inicializador para Request */
 #define REQUEST_INIT      { 0L, 0L, 0, 0 }
 
-/* Obtiene tamaño fijo de AstroInfo sin mood */
+/** @brief Obtiene tamaño fijo de AstroInfo sin mood */
 #define ASTRO_INFO_FSIZE(a) (sizeof(AstroInfo)-sizeof(((AstroInfo*)0)->mood))
-/* Obtiene tamaño dinámico de AstroInfo según mood_len para mood */
+/** @brief Obtiene tamaño dinámico de AstroInfo según mood_len para mood */
 #define ASTRO_INFO_DSIZE(a) (ASTRO_INFO_FSIZE(a)+((AstroInfo*)(a))->mood_len)
 
-/* Estructura para recibir fechas */
-typedef struct _Date
+/** @brief Estructura para fechas */
+typedef struct
 {
-  uint16_t year;
-  uint8_t  month;
-  uint8_t  day;
+  uint16_t year;  /**< El año */
+  uint8_t  month; /**< El mes */
+  uint8_t  day;   /**< El día del mes */
 } Date;
 
-/* Signos */
-typedef enum _AstroSign
+/** @brief Signos del horóscopo */
+typedef enum
 {
   S_ARIES,
   S_TAURUS,
@@ -44,25 +53,25 @@ typedef enum _AstroSign
   N_SIGNS
 } AstroSign;
 
-/* Estructura para información del horóscopo */
-typedef struct __attribute__((__packed__)) _AstroInfo
+/** @brief Información del horóscopo */
+typedef struct __attribute__((__packed__))
 {
-  uint8_t   sign;
-  uint8_t   sign_compat;
-  uint8_t   date_range[4]; /* i.e { mes, día, mes, día }*/
-  uint32_t  mood_len;
-  char     *mood;
+  uint8_t   sign;          /**< Signo (0-11) */
+  uint8_t   sign_compat;   /**< Signo compatible (0-11) */
+  uint8_t   date_range[4]; /**< Rango de fechas, i.e. { mes, día, mes, día } */
+  uint32_t  mood_len;      /**< Longitud del estado */
+  char     *mood;          /**< Estado */
 } AstroInfo;
 
-/* Estructura para solicitar datos del horóscopo */
-typedef struct _AstroQuery
+/** @brief Solicitud datos del horóscopo */
+typedef struct
 {
   Date      date;
   AstroSign sign;
 } AstroQuery;
 
-/* Condiciones del clima */
-typedef enum _WeatherCond {
+/** @brief Condiciones del clima */
+typedef enum {
   W_CLEAR,
   W_CLOUD,
   W_MIST,
@@ -72,14 +81,14 @@ typedef enum _WeatherCond {
   N_CONDITIONS
 } WeatherCond;
 
-/* Estructura para información del clima */
-typedef struct _WeatherInfo {
+/** @brief Información del clima */
+typedef struct {
   char  date[11];
   char  cond;
   float temp;
 } WeatherInfo;
 
-/* Estructura para solicitud/respuesta entre cliente y servidor  */
+/** @brief Estructura para solicitud/respuesta entre cliente y servidor  */
 typedef struct
 {
   void *send;
