@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 
+require 'json'
 require 'optparse'
 require 'ostruct'
 require 'socket'
@@ -136,14 +137,8 @@ loop do
   break if message.chomp.downcase == 'salir'
 
   # Manejar datos ingresados para el servidor
-  message.match /(\d{4})-(\d{1,2})-(\d{1,2})(?:[\s]+([\d]))?/ do |m|
-    parts = m.captures.map { |v| v.to_i }
-    message = [
-      parts[0,1].pack('S'),
-      parts[1,1].pack('C'),
-      parts[2,1].pack('C'),
-      parts[3,1].pack('C'),
-    ].join
+  message.match /(?<date>(\d{4})-(\d{1,2})-(\d{1,2}))(?:[\s]+([\d]))?/ do |m|
+    message = { date: m[:date] }.to_json
   end
 
   # Abrir conexión
