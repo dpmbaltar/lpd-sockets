@@ -5,7 +5,8 @@ ruby = find_program('ruby', version: '>= 3.0.5')
 doxygen = find_program('doxygen', version: '>= 1.9.0', required: false)
 gio = dependency('gio-2.0', version: '>= 2.50')
 glib = dependency('glib-2.0', version: '>= 2.0')
+json_glib =dependency('json-glib-1.0', version: '>= 1.6.0')
 
-add_project_dependencies(gio, glib,  language: 'c')
+add_project_dependencies(gio, glib, json_glib, language: 'c')
 
 subdir('src')
