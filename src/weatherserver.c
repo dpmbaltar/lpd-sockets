@@ -169,11 +169,6 @@ static int get_weather_day(const char *data, int length)
     gettimeofday(&time, NULL);
     g_date_set_time_t(today, time.tv_sec);
     day = g_date_days_between(today, date);
-    printf("Date: %s\n", date_str);
-    printf("Today: %d-%d-%d\n", g_date_get_year(today),
-                                g_date_get_month(today),
-                                g_date_get_day(today));
-    printf("Days between: %d\n", day);
 
     g_date_free(date);
     g_date_free(today);
