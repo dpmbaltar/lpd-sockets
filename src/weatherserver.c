@@ -185,7 +185,7 @@ static int get_weather_day(const char *data, int length)
     g_date_free(today);
   }
 
-  return day;
+  return day >= W_MIN_DAYS && day <= W_MAX_DAYS ? day : -1;
 }
 
 static char *weather_to_json(WeatherInfo *weather_info)
