@@ -73,6 +73,17 @@ static WeatherInfo weather_data[W_MAX_DAYS] = { 0 };
 /* Marcas de tiempo de la caché */
 static time_t weather_cache[W_MAX_DAYS] = { 0 };
 
+/* Condiciones del tiempo */
+static const char *conditions[N_CONDITIONS] =
+{
+  [W_CLEAR]   = "Despejado",
+  [W_CLOUD]   = "Nublado",
+  [W_MIST]    = "Neblina",
+  [W_RAIN]    = "Lluvia",
+  [W_SHOWERS] = "Chubascos",
+  [W_SNOW]    = "Nieve"
+};
+
 static void create_weather(WeatherInfo *weather_info, int day)
 {
   g_return_if_fail(weather_info != NULL);
@@ -194,6 +205,8 @@ static char *weather_to_json(WeatherInfo *weather_info)
   json_builder_add_double_value(builder, weather_info->temp);
   json_builder_set_member_name(builder, "cond");
   json_builder_add_int_value(builder, weather_info->cond);
+  json_builder_set_member_name(builder, "cond_str");
+  json_builder_add_string_value(builder, conditions[(int)weather_info->cond]);
   json_builder_end_object(builder);
 
   generator = json_generator_new();
