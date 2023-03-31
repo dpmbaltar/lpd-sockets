@@ -73,6 +73,26 @@ static WeatherInfo weather_data[W_MAX_DAYS] = { 0 };
 /* Marcas de tiempo de la caché */
 static time_t weather_cache[W_MAX_DAYS] = { 0 };
 
+static void create_weather(WeatherInfo *weather_info, int day)
+{
+  g_return_if_fail(weather_info != NULL);
+  g_return_if_fail(day >= W_MIN_DAYS && day <= W_MAX_DAYS);
+
+  GDateTime *datetime_now = g_date_time_new_now_local();
+  GDateTime *datetime = g_date_time_add_days(datetime_now, day);
+  GRand *rand = g_rand_new();
+  char *date = g_date_time_format(datetime, W_DATE_FORMAT);
+
+  memcpy(&(weather_data[day].date), date, sizeof(((WeatherInfo*)0)->date));
+  weather_data[day].cond = g_rand_int_range(rand, 0, N_CONDITIONS);
+  weather_data[day].temp = g_rand_double_range(rand, W_MIN_TEMP, W_MAX_TEMP);
+
+  g_date_time_unref(datetime_now);
+  g_date_time_unref(datetime);
+  g_rand_free(rand);
+  g_free(date);
+}
+
 static void get_weather(WeatherInfo *weather_info, int day)
 {
   static GMutex mutex;
@@ -85,21 +105,7 @@ static void get_weather(WeatherInfo *weather_info, int day)
   g_mutex_lock(&mutex);
 
   if ((ts.tv_sec - weather_cache[day]) > SRV_DATA_TTL) {
-    GDateTime *dt_now = g_date_time_new_now_local();
-    GDateTime *dt = g_date_time_add_days(dt_now, day);
-    GRand *rand = g_rand_new();
-    char *date = g_date_time_format(dt, W_DATE_FORMAT);
-
-    /* Generar datos aleatorios */
-    memcpy(&(weather_data[day].date), date, sizeof(((WeatherInfo*)0)->date));
-    weather_data[day].cond = g_rand_int_range(rand, 0, N_CONDITIONS);
-    weather_data[day].temp = g_rand_double_range(rand, W_MIN_TEMP, W_MAX_TEMP);
-    weather_cache[day] = ts.tv_sec;
-
-    g_date_time_unref(dt_now);
-    g_date_time_unref(dt);
-    g_rand_free(rand);
-    g_free(date);
+    create_weather(weather_info, day);
   }
 
   memcpy(weather_info, &weather_data[day], sizeof(weather_data[day]));
