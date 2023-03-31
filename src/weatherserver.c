@@ -33,7 +33,7 @@
 /* Puerto del servidor por defecto */
 #define SRV_PORT     24001
 /* Cantidad máxima para envío de bytes */
-#define SRV_SEND_MAX 16
+#define SRV_SEND_MAX 255
 /* Cantidad máxima para recepción de bytes */
 #define SRV_RECV_MAX 255
 /* TTL para datos del clima (segundos) */
