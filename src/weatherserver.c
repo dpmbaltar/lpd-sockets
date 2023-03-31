@@ -96,15 +96,15 @@ static void create_weather(WeatherInfo *weather_info, int day)
 static void get_weather(WeatherInfo *weather_info, int day)
 {
   static GMutex mutex;
-  struct timeval ts;
+  struct timeval time;
 
   g_return_if_fail(weather_info != NULL);
   g_return_if_fail(day >= W_MIN_DAYS && day <= W_MAX_DAYS);
 
-  gettimeofday(&ts, NULL);
+  gettimeofday(&time, NULL);
   g_mutex_lock(&mutex);
 
-  if ((ts.tv_sec - weather_cache[day]) > SRV_DATA_TTL) {
+  if ((time.tv_sec - weather_cache[day]) > SRV_DATA_TTL) {
     create_weather(weather_info, day);
   }
 
