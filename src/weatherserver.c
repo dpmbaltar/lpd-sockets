@@ -146,7 +146,7 @@ static GDate *parse_date(const char *data)
   return date;
 }
 
-static int get_client_arg(const char *data, int length)
+static int get_weather_day(const char *data, int length)
 {
   struct timeval time;
   int day = -1;
@@ -200,7 +200,7 @@ static void serve_weather(gpointer data, gpointer user_data)
   printx_bytes(recv_buff, (int)sizeof(recv_buff));
 
   /* Analizar datos recibidos */
-  weather_day = get_client_arg(recv_buff, MIN(SRV_RECV_MAX, strlen(recv_buff)));
+  weather_day = get_weather_day(recv_buff, MIN(SRV_RECV_MAX, strlen(recv_buff)));
 
   /* Preparar datos para el envío */
   if (weather_day != -1) {
