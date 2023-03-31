@@ -194,7 +194,7 @@ static void serve_weather(gpointer data, gpointer user_data)
   printx_bytes(recv_buff, (int)sizeof(recv_buff));
 
   /* Analizar datos recibidos */
-  weather_day = get_client_arg(recv_buff, strlen(recv_buff));
+  weather_day = get_client_arg(recv_buff, MIN(SRV_RECV_MAX, strlen(recv_buff)));
 
   /* Preparar datos para el envío */
   if (weather_day != -1) {
