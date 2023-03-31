@@ -242,7 +242,7 @@ static void serve_weather(gpointer data, gpointer user_data)
   }
 
   /* Enviar datos al cliente */
-  send(connfd, send_buff, sizeof(send_buff), 0);
+  send(connfd, send_buff, MIN(SRV_SEND_MAX, strlen(send_buff)), 0);
   printf("Bytes enviados:\n");
   printx_bytes(send_buff, (int)sizeof(send_buff));
 
