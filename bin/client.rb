@@ -32,7 +32,6 @@ loop do
   # Manejar datos ingresados para el servidor
   message.match /(?<date>\d{4}-\d{1,2}-\d{1,2})(?:[\s]+(?<sign>\w+))?/ do |m|
     message = { date: m[:date], sign: m[:sign] }.to_json
-    puts message
   end
 
   # Abrir conexión
