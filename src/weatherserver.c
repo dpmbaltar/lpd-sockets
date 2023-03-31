@@ -255,7 +255,7 @@ static void serve_weather(gpointer data, gpointer user_data)
 
     g_free(weather_json);
   } else {
-    send_len = sprintf(send_buff, "{\"error\":\"%s\"}", "Solicitud inválida");
+    send_len = sprintf(send_buff, "{\"error\":\"%s\"}", "Fecha incorrecta");
   }
 
   /* Enviar datos al cliente */
