@@ -236,6 +236,7 @@ static void serve_weather(gpointer data, gpointer user_data)
 
   /* Leer solicitud del cliente */
   recv(connfd, recv_buff, SRV_RECV_MAX, 0);
+  printf("Mensaje recibido:\n%s\n", recv_buff);
   printf("Bytes recibidos:\n");
   printx_bytes(recv_buff, strlen(recv_buff));
 
@@ -251,7 +252,6 @@ static void serve_weather(gpointer data, gpointer user_data)
     weather_json = weather_to_json(&weather);
     send_len = MIN(SRV_SEND_MAX, strlen(weather_json));
     memcpy(send_buff, weather_json, send_len);
-    printf("Mensaje enviado:\n%s\n", weather_json);
 
     g_free(weather_json);
   } else {
@@ -260,6 +260,7 @@ static void serve_weather(gpointer data, gpointer user_data)
 
   /* Enviar datos al cliente */
   send(connfd, send_buff, send_len, 0);
+  printf("Mensaje enviado:\n%s\n", send_buff);
   printf("Bytes enviados:\n");
   printx_bytes(send_buff, send_len);
 
