@@ -101,8 +101,8 @@ static void get_weather(WeatherInfo *weather_info, int day)
   g_return_if_fail(weather_info != NULL);
   g_return_if_fail(day >= W_MIN_DAYS && day <= W_MAX_DAYS);
 
-  gettimeofday(&time, NULL);
   g_mutex_lock(&mutex);
+  gettimeofday(&time, NULL);
 
   if ((time.tv_sec - weather_cache[day]) > SRV_DATA_TTL) {
     create_weather(weather_info, day);
