@@ -236,10 +236,14 @@ static void serve_weather(gpointer data, gpointer user_data)
   /* Preparar datos para el envío */
   if (weather_day != -1) {
     WeatherInfo weather = WEATHER_INFO_INIT;
+    char *weather_json;
+
     get_weather(&weather, weather_day);
-    memcpy(send_buff, &weather, sizeof(weather));
-    printf("Mensaje enviado: {%s, %d, %.1f}\n", weather.date, weather.cond,
-           weather.temp);
+    weather_json = weather_to_json(&weather);
+    memcpy(send_buff, weather_json, strlen(weather_json));
+    printf("Mensaje enviado: %s\n", weather_json);
+
+    g_free(weather_json);
   }
 
   /* Enviar datos al cliente */
