@@ -182,7 +182,7 @@ static int get_weather_day(const char *data, int length)
   return day;
 }
 
-static const char *weather_to_json(WeatherInfo *weather_info)
+static char *weather_to_json(WeatherInfo *weather_info)
 {
   g_return_val_if_fail(weather_info != NULL, NULL);
 
