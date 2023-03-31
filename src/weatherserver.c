@@ -33,9 +33,9 @@
 /* Puerto del servidor por defecto */
 #define SRV_PORT     24001
 /* Cantidad máxima para envío de bytes */
-#define SRV_SEND_MAX 255
+#define SRV_SEND_MAX 1024
 /* Cantidad máxima para recepción de bytes */
-#define SRV_RECV_MAX 255
+#define SRV_RECV_MAX 1024
 /* TTL para datos del clima (segundos) */
 #define SRV_DATA_TTL 3600
 
@@ -214,19 +214,20 @@ static void serve_weather(gpointer data, gpointer user_data)
   g_return_if_fail(connfd != -1);
 
   int weather_day = -1;
-  char recv_buff[SRV_RECV_MAX];
-  char send_buff[SRV_SEND_MAX];
+  int send_len = 0;
+  char recv_buff[SRV_RECV_MAX+1];
+  char send_buff[SRV_SEND_MAX+1];
 
   memset(recv_buff, 0, sizeof(recv_buff));
   memset(send_buff, 0, sizeof(send_buff));
 
   /* Leer solicitud del cliente */
-  recv(connfd, recv_buff, sizeof(recv_buff), 0);
+  recv(connfd, recv_buff, SRV_RECV_MAX, 0);
   printf("Bytes recibidos:\n");
-  printx_bytes(recv_buff, (int)sizeof(recv_buff));
+  printx_bytes(recv_buff, strlen(recv_buff));
 
   /* Analizar datos recibidos */
-  weather_day = get_weather_day(recv_buff, MIN(SRV_RECV_MAX, strlen(recv_buff)));
+  weather_day = get_weather_day(recv_buff, strlen(recv_buff));
 
   /* Preparar datos para el envío */
   if (weather_day != -1) {
@@ -235,16 +236,19 @@ static void serve_weather(gpointer data, gpointer user_data)
 
     get_weather(&weather, weather_day);
     weather_json = weather_to_json(&weather);
-    memcpy(send_buff, weather_json, strlen(weather_json));
-    printf("Mensaje enviado: %s\n", weather_json);
+    send_len = MIN(SRV_SEND_MAX, strlen(weather_json));
+    memcpy(send_buff, weather_json, send_len);
+    printf("Mensaje enviado:\n%s\n", weather_json);
 
     g_free(weather_json);
+  } else {
+    send_len = sprintf(send_buff, "{\"error\":\"%s\"}", "Solicitud inválida");
   }
 
   /* Enviar datos al cliente */
-  send(connfd, send_buff, MIN(SRV_SEND_MAX, strlen(send_buff)), 0);
+  send(connfd, send_buff, send_len, 0);
   printf("Bytes enviados:\n");
-  printx_bytes(send_buff, (int)sizeof(send_buff));
+  printx_bytes(send_buff, send_len);
 
   /* Cerrar conexión */
   close(connfd);
