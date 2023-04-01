@@ -268,7 +268,7 @@ static char *astro_to_json(AstroInfo *astro_info)
   json_builder_add_string_value(builder, astro_info->date_range[1]);
   json_builder_end_array(builder);
   json_builder_set_member_name(builder, "mood");
-  json_builder_add_string_value(builder, astro_moods[(int)astro_info->sign]);
+  json_builder_add_string_value(builder, astro_info->mood);
   json_builder_end_object(builder);
 
   generator = json_generator_new();
