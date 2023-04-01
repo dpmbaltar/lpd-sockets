@@ -110,7 +110,7 @@ static char astro_moods[N_SIGNS][H_MOOD_MAX] = { 0 };
 static AstroInfo astro_data[H_MAX_DAYS][N_SIGNS] = { 0 };
 
 /* Marcas de tiempo de la caché */
-static time_t astro_cache[H_MAX_DAYS] = { 0 };
+static time_t astro_cache[H_MAX_DAYS][N_SIGNS] = { 0 };
 
 static void create_horoscope(AstroInfo *astro_info, unsigned int sign)
 {
@@ -142,9 +142,9 @@ static void get_horoscope(AstroInfo *astro_info, int day, unsigned int sign)
   g_mutex_lock(&mutex);
   gettimeofday(&time, NULL);
 
-  if ((time.tv_sec - astro_cache[day]) > SRV_DATA_TTL) {
+  if ((time.tv_sec - astro_cache[day][sign]) > SRV_DATA_TTL) {
     create_horoscope(&astro_data[day][sign], sign);
-    astro_cache[day] = time.tv_sec;
+    astro_cache[day][sign] = time.tv_sec;
   }
 
   memcpy(astro_info, &astro_data[day][sign], sizeof(AstroInfo));
