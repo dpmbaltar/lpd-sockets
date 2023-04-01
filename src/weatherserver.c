@@ -94,9 +94,9 @@ static void create_weather(WeatherInfo *weather_info, int day)
   GRand *rand = g_rand_new();
   char *date = g_date_time_format(datetime, W_DATE_FORMAT);
 
-  memcpy(&(weather_data[day].date), date, sizeof(((WeatherInfo*)0)->date));
-  weather_data[day].cond = g_rand_int_range(rand, 0, N_CONDITIONS);
-  weather_data[day].temp = g_rand_double_range(rand, W_MIN_TEMP, W_MAX_TEMP);
+  memcpy(weather_info->date, date, sizeof(((WeatherInfo*)0)->date));
+  weather_info->cond = g_rand_int_range(rand, 0, N_CONDITIONS);
+  weather_info->temp = g_rand_double_range(rand, W_MIN_TEMP, W_MAX_TEMP);
 
   g_date_time_unref(datetime_now);
   g_date_time_unref(datetime);
@@ -116,10 +116,11 @@ static void get_weather(WeatherInfo *weather_info, int day)
   gettimeofday(&time, NULL);
 
   if ((time.tv_sec - weather_cache[day]) > SRV_DATA_TTL) {
-    create_weather(weather_info, day);
+    create_weather(&weather_data[day], day);
+    weather_cache[day] = time.tv_sec;
   }
 
-  memcpy(weather_info, &weather_data[day], sizeof(weather_data[day]));
+  memcpy(weather_info, &weather_data[day], sizeof(WeatherInfo));
   g_mutex_unlock(&mutex);
 }
 
