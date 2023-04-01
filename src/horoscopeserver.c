@@ -366,7 +366,7 @@ int main(int argc, char **argv)
   } else {
     memset(file_buf, 0, sizeof(file_buf));
     while (fgets(file_buf, sizeof(file_buf), file) && file_line < N_SIGNS) {
-      memcpy(&astro_moods[file_line], file_buf, sizeof(file_buf));
+      memcpy(&astro_moods[file_line], file_buf, strcspn(file_buf, "\n"));
       memset(file_buf, 0, sizeof(file_buf));
       file_line++;
     }
