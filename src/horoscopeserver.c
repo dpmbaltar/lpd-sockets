@@ -1,4 +1,6 @@
 #include <glib.h>
+#include <glib-object.h>
+#include <json-glib/json-glib.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -64,8 +66,28 @@ static GOptionEntry options[] =
   { NULL }
 };
 
+/* Instancia de JsonParser */
+static JsonParser *json_parser = NULL;
+
+/* Signos */
+static const char *astro_signs[N_SIGNS] =
+{
+  [S_ARIES]       = "aries",
+  [S_TAURUS]      = "tauro",
+  [S_GEMINI]      = "geminis",
+  [S_CANCER]      = "cancer",
+  [S_LEO]         = "leo",
+  [S_VIRGO]       = "virgo",
+  [S_LIBRA]       = "libra",
+  [S_SCORPIO]     = "escorpio",
+  [S_SAGITTARIUS] = "sagitario",
+  [S_CAPRICORN]   = "capricornio",
+  [S_AQUARIUS]    = "acuario",
+  [S_PISCES]      = "piscis"
+};
+
 /* Rangos de fechas para los signos */
-static const char astro_date_ranges[N_SIGNS][2][5] =
+static const char astro_date_ranges[N_SIGNS][2][6] =
 {
   { "03-21", "04-19" },
   { "04-20", "05-20" },
@@ -129,36 +151,136 @@ static void get_horoscope(AstroInfo *astro_info, int day, unsigned int sign)
   g_mutex_unlock(&mutex);
 }
 
-static int get_client_arg(const char *str, unsigned int len)
+static JsonNode *parse_json(const char *data, int length)
 {
-  int day = -1;
-  Date date = DATE_INIT;
-  GDateTime *dt_arg;
-  GDateTime *dt_now;
-  GDateTime *dt_today;
-  GTimeSpan dt_diff = 0;
+  GError *error = NULL;
 
-  g_return_val_if_fail(str != NULL, day);
-  g_return_val_if_fail(len != 0 || len < sizeof(Date), day);
+  g_return_val_if_fail(data != NULL, NULL);
 
-  memcpy(&date, str, sizeof(Date));
-  dt_arg = g_date_time_new_local(date.year, date.month, date.day, 0, 0, 0);
+  json_parser_load_from_data(json_parser, data, length, &error);
 
-  if (dt_arg != NULL) {
-    dt_now = g_date_time_new_now_local();
-    dt_today = g_date_time_new_local(g_date_time_get_year(dt_now),
-                                     g_date_time_get_month(dt_now),
-                                     g_date_time_get_day_of_month(dt_now),
-                                     0, 0, 0);
-    dt_diff = g_date_time_difference(dt_arg, dt_today);
-    day = dt_diff / G_TIME_SPAN_DAY;
-
-    g_date_time_unref(dt_arg);
-    g_date_time_unref(dt_now);
-    g_date_time_unref(dt_today);
+  if (error != NULL) {
+    g_print("Error al obtener JSON `%s`: %s\n", data, error->message);
+    g_error_free(error);
+    return NULL;
   }
 
-  return day;
+  return json_parser_steal_root(json_parser);
+}
+
+static GDate *parse_date(const char *data)
+{
+  GDate *date;
+
+  g_return_val_if_fail(data != NULL, NULL);
+
+  date = g_date_new();
+  g_date_set_parse(date, data);
+
+  if (!g_date_valid(date)) {
+    g_date_free(date);
+    date = NULL;
+  }
+
+  return date;
+}
+
+static int parse_sign(const char *data)
+{
+  g_return_val_if_fail(data != NULL, -1);
+
+  int sign = -1;
+  int length = strlen(data);
+
+  for (int i = 0; i < N_SIGNS; i++) {
+    if (g_ascii_strncasecmp(astro_signs[i], data, length) == 0) {
+      sign = i;
+      break;
+    }
+  }
+
+  return sign;
+}
+
+static void get_client_args(const char *data, int *arg_day, int *arg_sign)
+{
+  g_return_if_fail(data != NULL);
+  g_return_if_fail(arg_day != NULL);
+  g_return_if_fail(arg_sign != NULL);
+
+  struct timeval time;
+  int day = -1;
+  int sign = -1;
+  const char *date_str = NULL;
+  const char *sign_str = NULL;
+  GDate *date = NULL;
+  GDate *today = NULL;
+  JsonNode *json_node = NULL;
+  JsonObject *json_object = NULL;
+
+  json_node = parse_json(data, strlen(data));
+  json_object = json_node_get_object(json_node);
+  sign_str = json_object_get_string_member(json_object, "sign");
+  date_str = json_object_get_string_member(json_object, "date");
+
+  if (sign_str != NULL)
+    sign = parse_sign(sign_str);
+
+  if (date_str != NULL)
+    date = parse_date(date_str);
+
+  if (date != NULL) {
+    today = g_date_new();
+    gettimeofday(&time, NULL);
+    g_date_set_time_t(today, time.tv_sec);
+    day = g_date_days_between(today, date);
+
+    g_date_free(date);
+    g_date_free(today);
+  }
+
+  *arg_day = day >= H_MIN_DAYS && day <= H_MAX_DAYS ? day : -1;
+  *arg_sign = sign >= 0 && sign < N_SIGNS ? sign : -1;
+}
+
+static char *astro_to_json(AstroInfo *astro_info)
+{
+  g_return_val_if_fail(astro_info != NULL, NULL);
+
+  char *json = NULL;
+  JsonBuilder *builder;
+  JsonGenerator *generator;
+  JsonNode *root;
+
+  builder = json_builder_new();
+  json_builder_begin_object(builder);
+  json_builder_set_member_name(builder, "sign");
+  json_builder_add_int_value(builder, astro_info->sign);
+  json_builder_set_member_name(builder, "sign_s");
+  json_builder_add_string_value(builder, astro_signs[astro_info->sign]);
+  json_builder_set_member_name(builder, "sign_compat");
+  json_builder_add_int_value(builder, astro_info->sign_compat);
+  json_builder_set_member_name(builder, "sign_compat_s");
+  json_builder_add_string_value(builder, astro_signs[astro_info->sign_compat]);
+  json_builder_set_member_name(builder, "date_range");
+  json_builder_begin_array(builder);
+  json_builder_add_string_value(builder, astro_info->date_range[0]);
+  json_builder_add_string_value(builder, astro_info->date_range[1]);
+  json_builder_end_array(builder);
+  json_builder_set_member_name(builder, "mood");
+  json_builder_add_string_value(builder, astro_moods[(int)astro_info->sign]);
+  json_builder_end_object(builder);
+
+  generator = json_generator_new();
+  root = json_builder_get_root(builder);
+  json_generator_set_root(generator, root);
+  json = json_generator_to_data(generator, NULL);
+
+  json_node_free(root);
+  g_object_unref(generator);
+  g_object_unref(builder);
+
+  return json;
 }
 
 static void serve_horoscope(gpointer data, gpointer user_data)
@@ -167,39 +289,43 @@ static void serve_horoscope(gpointer data, gpointer user_data)
   g_return_if_fail(connfd != -1);
 
   int arg_day = -1;
-  int arg_sign = 0;
+  int arg_sign = -1;
   int send_len = SRV_SEND_MAX;
-  char recv_buff[SRV_RECV_MAX];
-  char send_buff[SRV_SEND_MAX];
+  char recv_buff[SRV_RECV_MAX+1];
+  char send_buff[SRV_SEND_MAX+1];
 
   memset(recv_buff, 0, sizeof(recv_buff));
   memset(send_buff, 0, sizeof(send_buff));
 
   /* Leer solicitud del cliente */
-  recv(connfd, recv_buff, sizeof(recv_buff), 0);
+  recv(connfd, recv_buff, SRV_RECV_MAX, 0);
+  printf("Mensaje recibido:\n%s\n", recv_buff);
   printf("Bytes recibidos:\n");
-  printx_bytes(recv_buff, (int)sizeof(recv_buff));
+  printx_bytes(recv_buff, strlen(recv_buff));
 
   /* Analizar datos recibidos */
-  arg_day = get_client_arg(recv_buff, (int)sizeof(recv_buff));
+  get_client_args(recv_buff, &arg_day, &arg_sign);
 
   /* Preparar datos para el envío */
-  if (arg_day != -1) {
+  if (arg_day != -1 && arg_sign != -1) {
     AstroInfo astro_info = ASTRO_INFO_INIT;
-    send_len = sizeof(astro_info);
-    get_horoscope(&astro_info, arg_day, arg_sign);
-    memcpy(send_buff, &astro_info, send_len);
+    char *astro_json;
 
-    printf("Mensaje enviado: {%d, %d, [%5s, %5s], %s}\n",
-           astro_info.sign,
-           astro_info.sign_compat,
-           astro_info.date_range[0],
-           astro_info.date_range[1],
-           astro_info.mood);
+    get_horoscope(&astro_info, arg_day, arg_sign);
+    astro_json = astro_to_json(&astro_info);
+    send_len = MIN(SRV_SEND_MAX, strlen(astro_json));
+    memcpy(send_buff, astro_json, send_len);
+
+    g_free(astro_json);
+  } else {
+    send_len = sprintf(send_buff,
+                       "{\"error\":\"%s\"}",
+                       "Fecha y/o signo incorrectos");
   }
 
   /* Enviar datos al cliente */
   send(connfd, send_buff, send_len, 0);
+  printf("Mensaje enviado:\n%s\n", send_buff);
   printf("Bytes enviados (%d):\n", send_len);
   printx_bytes(send_buff, send_len);
 
@@ -253,9 +379,11 @@ int main(int argc, char **argv)
   }
 
   printf("Iniciando %s...\n", SRV_NAME);
+  json_parser = json_parser_new();
   server = tcp_server_new(addr, port, serve_horoscope, NULL);
   tcp_server_run(server, &error);
   tcp_server_free(server);
+  g_object_unref(json_parser);
 
   if (error != NULL) {
     fprintf(stderr, "%s\n", error->message);
