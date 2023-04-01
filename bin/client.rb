@@ -47,7 +47,7 @@ loop do
   puts
 
   # Recibir datos
-  response = socket.recv(255).delete("\000")
+  response = socket.recv(1024).delete("\000")
   puts 'Mensaje recibido:', response
   puts 'Bytes recibidos:'
   response.each_byte do |b|
@@ -58,7 +58,7 @@ loop do
   # Transformar a JSON
   begin
     puts 'Datos deserializados:'
-    response_json = JSON.parse(response.encode 'UTF-8')
+    response_json = JSON.parse response
     puts JSON.pretty_generate response_json
   rescue JSON::ParserError => error
     puts '[JSON::ParserError: %s]' % error.message
