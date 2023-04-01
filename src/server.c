@@ -20,6 +20,8 @@
 #include "types.h"
 #include "util.h"
 
+/* Nombre del servidor */
+#define SRV_NAME         "Servidor principal"
 /* Descripción del servidor */
 #define SRV_INFO         "- Servidor principal"
 /* Dirección del servidor por defecto */
@@ -181,14 +183,17 @@ int main(int argc, char **argv)
 
   context = g_option_context_new(SRV_INFO);
   g_option_context_add_main_entries(context, options, NULL);
+  g_option_context_parse(context, &argc, &argv, &error);
+  g_option_context_free(context);
 
-  if (!g_option_context_parse(context, &argc, &argv, &error)) {
+  if (error != NULL) {
     fprintf(stderr, "%s\n", error->message);
+    g_error_free(error);
     return EXIT_FAILURE;
   }
 
-  if (port <= 1024 || weather_port <= 1024) {
-    fprintf(stderr, "El puerto debe ser mayor a 1024\n");
+  if (port <= 1024 || weather_port <= 1024 || horoscope_port <= 1024) {
+    fprintf(stderr, "Los puertos deben ser mayor a 1024\n");
     return EXIT_FAILURE;
   }
 
@@ -196,21 +201,21 @@ int main(int argc, char **argv)
     max_threads = g_get_num_processors();
   }
 
+  printf("Iniciando %s...\n", SRV_NAME);
   weather_client = tcp_client_new(weather_host, weather_port);
   horoscope_client = tcp_client_new(horoscope_host, horoscope_port);
   server = tcp_server_new_full(addr, port, serve, NULL, max_conn, max_threads,
                                exclusive);
   tcp_server_run(server, &error);
-
-  if (error != NULL) {
-    fprintf(stderr, "%s", error->message);
-    return EXIT_FAILURE;
-  }
-
   tcp_server_free(server);
   tcp_client_free(weather_client);
   tcp_client_free(horoscope_client);
-  g_option_context_free(context);
+
+  if (error != NULL) {
+    fprintf(stderr, "%s\n", error->message);
+    g_error_free(error);
+    return EXIT_FAILURE;
+  }
 
   return EXIT_SUCCESS;
 }
