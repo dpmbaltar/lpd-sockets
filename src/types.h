@@ -14,7 +14,7 @@
 /** @brief Inicializador para Date */
 #define DATE_INIT         { 0, 0, 0 }
 /** @brief Inicializador para AstroInfo */
-#define ASTRO_INFO_INIT   { 0, 0, {0}, {0} }
+#define ASTRO_INFO_INIT   { 0, 0, {{0}}, {0} }
 /** @brief Inicializador para AstroQuery */
 #define ASTRO_QUERY_INIT  { DATE_INIT, 0 }
 /** @brief Inicializador para WeatherInfo */
