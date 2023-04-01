@@ -277,9 +277,12 @@ int main(int argc, char **argv)
 
   context = g_option_context_new(SRV_INFO);
   g_option_context_add_main_entries(context, options, NULL);
+  g_option_context_parse(context, &argc, &argv, &error);
+  g_option_context_free(context);
 
-  if (!g_option_context_parse(context, &argc, &argv, &error)) {
+  if (error != NULL) {
     fprintf(stderr, "%s\n", error->message);
+    g_error_free(error);
     return EXIT_FAILURE;
   }
 
@@ -288,19 +291,18 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  json_parser = json_parser_new();
   printf("Iniciando %s...\n", SRV_NAME);
+  json_parser = json_parser_new();
   server = tcp_server_new(addr, port, serve_weather, NULL);
   tcp_server_run(server, &error);
+  tcp_server_free(server);
+  g_object_unref(json_parser);
 
   if (error != NULL) {
-    fprintf(stderr, "%s", error->message);
+    fprintf(stderr, "%s\n", error->message);
+    g_error_free(error);
     return EXIT_FAILURE;
   }
-
-  tcp_server_free(server);
-  g_option_context_free(context);
-  g_object_unref(json_parser);
 
   return EXIT_SUCCESS;
 }
