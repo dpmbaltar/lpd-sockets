@@ -122,7 +122,7 @@ static void create_horoscope(AstroInfo *astro_info, unsigned int sign)
 
   astro_info->sign = sign;
   astro_info->sign_compat = g_rand_int_range(rand, 0, N_SIGNS);
-  memcpy(astro_info->mood, astro_moods[mood_n], sizeof(((AstroInfo*)0)->mood));
+  memcpy(astro_info->mood, &astro_moods[mood_n], sizeof(((AstroInfo*)0)->mood));
   memcpy(astro_info->date_range,
          astro_date_ranges[sign],
          sizeof(((AstroInfo*)0)->date_range));
