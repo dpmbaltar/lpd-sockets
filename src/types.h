@@ -58,8 +58,8 @@ typedef struct
 {
   uint8_t sign;             /**< Signo (0-11) */
   uint8_t sign_compat;      /**< Signo compatible (0-11) */
-  char    date_range[2][5]; /**< Rango de fechas, i.e. {"MM-DD", "MM-DD"} */
-  char    mood[244];        /**< Estado */
+  char    date_range[2][6]; /**< Rango de fechas, i.e. {"MM-DD", "MM-DD"} */
+  char    mood[242];        /**< Estado */
 } AstroInfo;
 
 /** @brief Solicitud datos del horóscopo */
