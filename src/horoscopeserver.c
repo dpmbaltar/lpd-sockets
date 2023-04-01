@@ -234,16 +234,11 @@ int main(int argc, char **argv)
   GError         *error = NULL;
   GOptionContext *context;
   TcpServer      *server;
-  bool            options_parsed = FALSE;
 
   context = g_option_context_new(SRV_INFO);
   g_option_context_add_main_entries(context, options, NULL);
-  options_parsed = g_option_context_parse(context, &argc, &argv, &error);
+  g_option_context_parse(context, &argc, &argv, &error);
   g_option_context_free(context);
-
-  if (!options_parsed) {
-    fprintf(stderr, "Error al obtener opciones\n");
-  }
 
   if (error != NULL) {
     fprintf(stderr, "%s\n", error->message);
