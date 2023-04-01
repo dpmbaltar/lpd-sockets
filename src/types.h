@@ -14,7 +14,7 @@
 /** @brief Inicializador para Date */
 #define DATE_INIT         { 0, 0, 0 }
 /** @brief Inicializador para AstroInfo */
-#define ASTRO_INFO_INIT   { 0, 0, {0}, 0, 0L }
+#define ASTRO_INFO_INIT   { 0, 0, {0}, {0} }
 /** @brief Inicializador para AstroQuery */
 #define ASTRO_QUERY_INIT  { DATE_INIT, 0 }
 /** @brief Inicializador para WeatherInfo */
@@ -54,13 +54,12 @@ typedef enum
 } AstroSign;
 
 /** @brief Información del horóscopo */
-typedef struct __attribute__((__packed__))
+typedef struct
 {
-  uint8_t   sign;          /**< Signo (0-11) */
-  uint8_t   sign_compat;   /**< Signo compatible (0-11) */
-  uint8_t   date_range[4]; /**< Rango de fechas, i.e. { mes, día, mes, día } */
-  uint32_t  mood_len;      /**< Longitud del estado */
-  char     *mood;          /**< Estado */
+  uint8_t sign;             /**< Signo (0-11) */
+  uint8_t sign_compat;      /**< Signo compatible (0-11) */
+  char    date_range[2][5]; /**< Rango de fechas, i.e. {"MM-DD", "MM-DD"} */
+  char    mood[244];        /**< Estado */
 } AstroInfo;
 
 /** @brief Solicitud datos del horóscopo */

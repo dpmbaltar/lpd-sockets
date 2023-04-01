@@ -42,7 +42,7 @@
 /* Máximo de días para el horóscopo, a partir de la fecha actual */
 #define H_MAX_DAYS 7
 /* Máximo de información para el horóscopo (i.e. mood_len/mood de AstroInfo) */
-#define H_MOOD_MAX 255
+#define H_MOOD_MAX 256
 /* Archivo de datos del horóscopo */
 #define H_FILENAME "horoscope.txt"
 
@@ -65,20 +65,20 @@ static GOptionEntry options[] =
 };
 
 /* Rangos de fechas para los signos */
-static const char astro_date_ranges[N_SIGNS][4] =
+static const char astro_date_ranges[N_SIGNS][2][5] =
 {
-  { 3, 21, 4, 19 },
-  { 4, 20, 5, 20 },
-  { 5, 21, 6, 21 },
-  { 6, 22, 7, 22 },
-  { 7, 23, 8, 22 },
-  { 8, 23, 9, 22 },
-  { 9, 23, 10, 22 },
-  { 10, 23, 11, 22 },
-  { 11, 23, 12, 21 },
-  { 12, 22, 1, 19 },
-  { 1, 20, 2, 18 },
-  { 2, 19, 3, 20 }
+  { "03-21", "04-19" },
+  { "04-20", "05-20" },
+  { "05-21", "06-21" },
+  { "06-22", "07-22" },
+  { "07-23", "08-22" },
+  { "08-23", "09-22" },
+  { "09-23", "10-22" },
+  { "10-23", "11-22" },
+  { "11-23", "12-21" },
+  { "12-22", "01-19" },
+  { "01-20", "02-18" },
+  { "02-19", "03-20" }
 };
 
 /* Datos del horóscopo que se cargan de un archivo dado */
@@ -90,45 +90,42 @@ static AstroInfo astro_data[H_MAX_DAYS][N_SIGNS] = { 0 };
 /* Marcas de tiempo de la caché */
 static time_t astro_cache[H_MAX_DAYS] = { 0 };
 
-static void create_horoscope(AstroInfo *astro_info, int sign)
+static void create_horoscope(AstroInfo *astro_info, unsigned int sign)
 {
+  g_return_if_fail(astro_info != NULL);
+  g_return_if_fail(sign < N_SIGNS);
+
   GRand *rand = g_rand_new();
-  int mood_num = g_rand_int_range(rand, 0, N_SIGNS);
+  int mood_n = g_rand_int_range(rand, 0, N_SIGNS);
 
   astro_info->sign = sign;
   astro_info->sign_compat = g_rand_int_range(rand, 0, N_SIGNS);
-  astro_info->mood = g_strdup(astro_moods[mood_num]); /* Liberar con g_free() */
-  astro_info->mood_len = strlen(astro_info->mood);
-  memcpy(astro_info->date_range, astro_date_ranges[astro_info->sign], 4);
+  memcpy(astro_info->mood, astro_moods[mood_n], sizeof(((AstroInfo*)0)->mood));
+  memcpy(astro_info->date_range,
+         astro_date_ranges[sign],
+         sizeof(((AstroInfo*)0)->date_range));
 
   g_free(rand);
 }
 
-static void get_horoscope(AstroInfo *astro_info, int day, int sign)
+static void get_horoscope(AstroInfo *astro_info, int day, unsigned int sign)
 {
   static GMutex mutex;
-  struct timeval ts;
+  struct timeval time;
 
   g_return_if_fail(astro_info != NULL);
   g_return_if_fail(day >= H_MIN_DAYS && day <= H_MAX_DAYS);
   g_return_if_fail(sign < N_SIGNS);
 
-  gettimeofday(&ts, NULL);
   g_mutex_lock(&mutex);
+  gettimeofday(&time, NULL);
 
-  if ((ts.tv_sec - astro_cache[day]) > SRV_DATA_TTL) {
-    if (astro_data[day][sign].mood != NULL) {
-      g_free(astro_data[day][sign].mood);
-    }
-
-    AstroInfo astro_info_day = ASTRO_INFO_INIT;
-    create_horoscope(&astro_info_day, sign);
-    memcpy(&astro_data[day][sign], &astro_info_day, sizeof(astro_info_day));
-
-    astro_cache[day] = ts.tv_sec;
+  if ((time.tv_sec - astro_cache[day]) > SRV_DATA_TTL) {
+    create_horoscope(&astro_data[day][sign], sign);
+    astro_cache[day] = time.tv_sec;
   }
 
-  memcpy(astro_info, &astro_data[day][sign], sizeof(astro_data[day][sign]));
+  memcpy(astro_info, &astro_data[day][sign], sizeof(AstroInfo));
   g_mutex_unlock(&mutex);
 }
 
@@ -189,33 +186,15 @@ static void serve_horoscope(gpointer data, gpointer user_data)
   /* Preparar datos para el envío */
   if (arg_day != -1) {
     AstroInfo astro_info = ASTRO_INFO_INIT;
-    send_len = ASTRO_INFO_FSIZE(&astro_info);
+    send_len = sizeof(astro_info);
     get_horoscope(&astro_info, arg_day, arg_sign);
     memcpy(send_buff, &astro_info, send_len);
 
-    /* Ajustar cantidad de datos a enviar según el tamaño de AstroInfo.mood */
-    if (astro_info.mood_len > 0 && astro_info.mood != NULL) {
-      int mood_start = send_len;
-      send_len = ASTRO_INFO_DSIZE(&astro_info);
-
-      /* Acortar datos si excede el máximo del búfer de envío de datos */
-      if (send_len > SRV_SEND_MAX) {
-        astro_info.mood_len = SRV_SEND_MAX - ASTRO_INFO_FSIZE(&astro_info);
-      }
-
-      memcpy(&send_buff[mood_start], astro_info.mood, astro_info.mood_len);
-    } else {
-      send_len = ASTRO_INFO_FSIZE(&astro_info);
-    }
-
-    printf("Mensaje enviado: {%d, %d, %d/%d - %d/%d, %.*s}\n",
+    printf("Mensaje enviado: {%d, %d, [%5s, %5s], %s}\n",
            astro_info.sign,
            astro_info.sign_compat,
            astro_info.date_range[0],
            astro_info.date_range[1],
-           astro_info.date_range[2],
-           astro_info.date_range[3],
-           astro_info.mood_len,
            astro_info.mood);
   }
 
