@@ -1,3 +1,47 @@
+/**
+ * @file server.c
+ * @author Diego Pablo Matias Baltar (diego.baltar@est.fi.uncoma.edu.ar)
+ * @brief Servidor principal
+ * @version 0.1
+ * @date 2023-04-02
+ *
+ * Programa del servidor princpal (TCP), que recibe consultas en formato JSON de
+ * un cliente y las reenvía a los servidores del clima y horóscopo. Luego, de
+ * las respuestas obtenidas, se arma una única respuesta en formato JSON y se la
+ * envía de vuelta al cliente, y finalmente cerrando la conexión.
+ *
+ * Para cada consulta recibida, se utiliza un "pool" de hilos, es decir, que el
+ * servidor reutiliza una serie de hilos para satisfacer las consultas de los
+ * clientes.
+ *
+ * A continuación se detallan las opciones por parámetros que toma el servidor,
+ * que también puede verse al ejecutar el programa con el parámetro -h o --help:
+ *
+ * \code{.unparsed}
+ * ./server --help
+ * \endcode
+ *
+ * Resultado:
+ *
+ * @code{.unparsed}
+ * Uso:
+ *   server [OPTION?] - Servidor principal
+ *
+ * Opciones de ayuda:
+ *   -h, --help                  Muestra ayuda de opciones
+ *
+ * Opciones de aplicación:
+ *   -a, --addr=A                Direccion A (0 = INADDR_ANY por defecto)
+ *   -p, --port=P                Puerto P > 1024 del servidor (24000 por defecto)
+ *   -w, --weather-host=WH       Host WH del servidor del clima (localhost por defecto)
+ *   -W, --weather-port=WP       Puerto WP > 1024 del servidor del clima (24001 por defecto)
+ *   -s, --horoscope-host=SH     Host SH del servidor del horoscopo (localhost por defecto)
+ *   -S, --horoscope-port=SP     Puerto SP > 1024 del servidor del horoscopo (24002 por defecto)
+ *   -c, --max-conn=C            Aceptar hasta C conexiones (10 por defecto)
+ *   -t, --max-threads=T         Usar hasta T hilos o -1 sin limites (usar cantidad de procesadores por defecto)
+ *   -e, --exclusive             Usar hilos exclusivos (falso por defecto)
+ * @endcode
+ */
 #include <glib.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,31 +64,31 @@
 #include "types.h"
 #include "util.h"
 
-/* Nombre del servidor */
+/** Nombre del servidor */
 #define SRV_NAME         "Servidor principal"
-/* Descripción del servidor */
+/** Descripción del servidor */
 #define SRV_INFO         "- Servidor principal"
-/* Dirección del servidor por defecto */
+/** Dirección del servidor por defecto */
 #define SRV_ADDR         INADDR_ANY
-/* Puerto del servidor por defecto */
+/** Puerto del servidor por defecto */
 #define SRV_PORT         24000
-/* Host del servidor del clima por defecto */
+/** Host del servidor del clima por defecto */
 #define SRV_WEATHER_HOST "127.0.0.1"
-/* Puerto del servidor del clima por defecto */
+/** Puerto del servidor del clima por defecto */
 #define SRV_WEATHER_PORT 24001
-/* Host del servidor del horóscopo por defecto */
+/** Host del servidor del horóscopo por defecto */
 #define SRV_HOROS_HOST   "127.0.0.1"
-/* Puerto del servidor del horóscopo por defecto */
+/** Puerto del servidor del horóscopo por defecto */
 #define SRV_HOROS_PORT   24002
-/* Cantidad máxima de conexiones por defecto */
+/** Cantidad máxima de conexiones por defecto */
 #define SRV_MAX_CONN     10
-/* Cantidad máxima de hilos por defecto (0 = g_get_num_processors()) */
+/** Cantidad máxima de hilos por defecto (0 = g_get_num_processors()) */
 #define SRV_MAX_THREADS  0
-/* Indica si se usan hilos exclusivos (no por defecto) */
+/** Indica si se usan hilos exclusivos (no por defecto) */
 #define SRV_EXC_THREADS  false
-/* Cantidad máxima para envío de bytes */
+/** Cantidad máxima para envío de bytes */
 #define SRV_SEND_MAX     1024
-/* Cantidad máxima para recepción de bytes */
+/** Cantidad máxima para recepción de bytes */
 #define SRV_RECV_MAX     1024
 
 /* Dirección del servidor */
@@ -56,13 +100,13 @@ static uint16_t port = SRV_PORT;
 /* Host del servidor del clima */
 static char *weather_host = SRV_WEATHER_HOST;
 
-/* Puerto del servidor del clima*/
+/* Puerto del servidor del clima */
 static uint16_t weather_port = SRV_WEATHER_PORT;
 
 /* Host del servidor del horóscopo */
 static char *horoscope_host = SRV_HOROS_HOST;
 
-/* Puerto del servidor del horóscopo*/
+/* Puerto del servidor del horóscopo */
 static uint16_t horoscope_port = SRV_HOROS_PORT;
 
 /* Máximo de conexiones */
@@ -176,21 +220,6 @@ static void serve(gpointer data, gpointer user_data)
   printf("Desconectado del cliente.\n");
 }
 
-/**
- * @brief Servidor TCP básico.
- *
- * Ejecuta un servidor TCP básico:
- * 1. socket()
- * 2. bind()
- * 3. listen()
- * 4. accept()
- * 5. read()/write()
- * 6. close()
- *
- * @param argc
- * @param argv
- * @return 0 si la ejecución es exitosa, 1 si falla
- */
 int main(int argc, char **argv)
 {
   GError         *error = NULL;
