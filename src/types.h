@@ -12,30 +12,6 @@
 
 #include <stdint.h>
 
-/** Inicializador para Date */
-#define DATE_INIT         { 0, 0, 0 }
-/** Inicializador para AstroInfo */
-#define ASTRO_INFO_INIT   { 0, 0, {{0}}, {0} }
-/** Inicializador para AstroQuery */
-#define ASTRO_QUERY_INIT  { DATE_INIT, 0 }
-/** Inicializador para WeatherInfo */
-#define WEATHER_INFO_INIT { {0}, 0, 0.0F }
-/** Inicializador para Request */
-#define REQUEST_INIT      { 0L, 0L, 0, 0 }
-
-/** Obtiene tamaño fijo de AstroInfo sin mood */
-#define ASTRO_INFO_FSIZE(a) (sizeof(AstroInfo)-sizeof(((AstroInfo*)0)->mood))
-/** Obtiene tamaño dinámico de AstroInfo según mood_len para mood */
-#define ASTRO_INFO_DSIZE(a) (ASTRO_INFO_FSIZE(a)+((AstroInfo*)(a))->mood_len)
-
-/** Estructura para fechas */
-typedef struct
-{
-  uint16_t year;  /**< El año */
-  uint8_t  month; /**< El mes */
-  uint8_t  day;   /**< El día del mes */
-} Date;
-
 /** Signos del horóscopo */
 typedef enum
 {
@@ -63,13 +39,6 @@ typedef struct
   char    mood[242];        /**< Estado */
 } AstroInfo;
 
-/** Solicitud datos del horóscopo */
-typedef struct
-{
-  Date      date;
-  AstroSign sign;
-} AstroQuery;
-
 /** Condiciones del clima */
 typedef enum {
   W_CLEAR,
@@ -87,12 +56,3 @@ typedef struct {
   char  cond;
   float temp;
 } WeatherInfo;
-
-/** Estructura para solicitud/respuesta entre cliente y servidor */
-typedef struct
-{
-  void *send;
-  void *recv;
-  int   send_len;
-  int   recv_len;
-} Request;

@@ -223,9 +223,10 @@ static void serve_weather(gpointer data, gpointer user_data)
 
   /* Preparar datos para el envío */
   if (weather_day != -1) {
-    WeatherInfo weather = WEATHER_INFO_INIT;
+    WeatherInfo weather;
     char *weather_json;
 
+    memset(&weather, 0, sizeof(WeatherInfo));
     get_weather(&weather, weather_day);
     weather_json = weather_to_json(&weather);
     send_len = MIN(SRV_SEND_MAX, strlen(weather_json));

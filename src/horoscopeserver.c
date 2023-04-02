@@ -308,9 +308,10 @@ static void serve_horoscope(gpointer data, gpointer user_data)
 
   /* Preparar datos para el envío */
   if (arg_day != -1 && arg_sign != -1) {
-    AstroInfo astro_info = ASTRO_INFO_INIT;
+    AstroInfo astro_info;
     char *astro_json;
 
+    memset(&astro_info, 0, sizeof(AstroInfo));
     get_horoscope(&astro_info, arg_day, arg_sign);
     astro_json = astro_to_json(&astro_info);
     send_len = MIN(SRV_SEND_MAX, strlen(astro_json));
