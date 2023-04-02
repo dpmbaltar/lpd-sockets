@@ -4,8 +4,6 @@
  * @brief Estructuras utilizadas para la transmisión de datos
  * @version 0.1
  * @date 2023-03-29
- *
- * @copyright Copyright (c) 2023
  */
 #pragma once
 
