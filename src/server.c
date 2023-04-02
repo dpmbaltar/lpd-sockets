@@ -142,7 +142,7 @@ static void serve(gpointer data, gpointer user_data)
     wc_thread = tcp_client_run(weather_client, get_info, &recv_buf, &error);
     if (error != NULL) {
       fprintf(stderr, "%s\n", error->message);
-      g_error_free(error);
+      g_clear_error(&error);
     }
 
     /* Solicitar datos del horóscopo */
@@ -150,7 +150,7 @@ static void serve(gpointer data, gpointer user_data)
     hc_thread = tcp_client_run(horoscope_client, get_info, &recv_buf, &error);
     if (error != NULL) {
       fprintf(stderr, "%s\n", error->message);
-      g_error_free(error);
+      g_clear_error(&error);
     }
 
     if (wc_thread != NULL) {
