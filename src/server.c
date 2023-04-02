@@ -164,8 +164,8 @@ static void serve(gpointer data, gpointer user_data)
 
   /* Armar y enviar respuesta */
   send_len = sprintf(send_buf, "{\"clima\":%s,\"horoscopo\":%s}",
-                     weather_response,
-                     horoscope_response);
+                     weather_response != NULL ? weather_response : "null",
+                     horoscope_response != NULL ? horoscope_response : "null");
   g_free(weather_response);
   g_free(horoscope_response);
   send(connfd, send_buf, send_len, 0);
