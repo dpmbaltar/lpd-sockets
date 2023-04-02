@@ -1,4 +1,6 @@
 #include <glib.h>
+#include <glib-object.h>
+#include <json-glib/json-glib.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -26,10 +28,12 @@
 #define SRV_HOST "127.0.0.1"
 /* Puerto del servidor por defecto */
 #define SRV_PORT 24000
+/* Cantidad máxima de datos a enviar al servidor */
+#define BUF_SEND_MAX 255
+/* Cantidad máxima de datos a leer del servidor */
+#define BUF_RECV_MAX 1023
 /* Cantidad máxima de datos a leer del usuario */
-#define MAX_BUFF 20
-/* Token para salir del programa */
-#define TOK_EXIT "salir"
+#define USR_READ_MAX 80
 
 /* Host del servidor */
 static char *host = SRV_HOST;
@@ -45,106 +49,110 @@ static GOptionEntry options[] =
   { NULL }
 };
 
-static void parse_date(const char *str, Date *date)
+/* Cliente TCP */
+static TcpClient *client = NULL;
+
+/* Instancia de JsonParser */
+static JsonParser *json_parser = NULL;
+
+static JsonNode *parse_json(const char *data, int length)
 {
-  g_return_if_fail(str != NULL || strlen(str) < 10);
-  g_return_if_fail(date != NULL);
+  GError *error = NULL;
 
-  GDate *gdate = g_date_new();
-  char date_str[11];
-  date_str[10] = 0;
-  memcpy(date_str, str, 10);
-  g_date_set_parse(gdate, date_str);
+  g_return_val_if_fail(data != NULL, NULL);
 
-  if (g_date_valid(gdate)) {
-    date->year = g_date_get_year(gdate);
-    date->month = g_date_get_month(gdate);
-    date->day = g_date_get_day(gdate);
+  json_parser_load_from_data(json_parser, data, length, &error);
+
+  if (error != NULL) {
+    g_print("Error al obtener JSON `%s`: %s\n", data, error->message);
+    g_error_free(error);
+    return NULL;
   }
 
-  g_date_free(gdate);
+  return json_parser_steal_root(json_parser);
+}
+
+static void print_json(const char *data)
+{
+  JsonGenerator *generator;
+  JsonNode *root = parse_json(data, strlen(data));
+  char *json = NULL;
+
+  if (root != NULL) {
+    generator = json_generator_new();
+    json_generator_set_root(generator, root);
+    json_generator_set_pretty(generator, TRUE);
+    json = json_generator_to_data(generator, NULL);
+
+    printf("%s\n", json);
+
+    json_node_free(root);
+    g_object_unref(generator);
+    g_free(json);
+  }
 }
 
 static void *client_func(int sockfd, gpointer data)
 {
   g_return_val_if_fail(sockfd != -1, NULL);
+  g_return_val_if_fail(data != NULL, NULL);
 
-  char buff[MAX_BUFF];
-  Date date = DATE_INIT;
-  WeatherInfo weather = WEATHER_INFO_INIT;
+  char recv_buf[BUF_RECV_MAX+1];
+  char send_buf[BUF_SEND_MAX+1];
+  int  send_len = MIN(BUF_SEND_MAX, strlen(data));
 
-  /* Obtener fecha ingresada por el usuario */
-  parse_date((const char*)data, &date);
-  memset(buff, 0, sizeof(buff));
-  memcpy(buff, &date, sizeof(date));
+  memset(recv_buf, 0, sizeof(recv_buf));
+  memset(send_buf, 0, sizeof(send_buf));
+  memcpy(send_buf, data, send_len);
 
   /* Enviar mensaje al servidor */
-  send(sockfd, buff, sizeof(buff), 0);
-  printf("Bytes enviados:\n");
-  printx_bytes(buff, (int)sizeof(buff));
+  send(sockfd, send_buf, send_len, 0);
+  printf("Mensaje enviado:\n%s\n", send_buf);
 
-  /* Leer respuesta del servidor */
-  memset(buff, 0, sizeof(buff));
-  recv(sockfd, buff, sizeof(buff), 0);
-  printf("Bytes recibidos:\n");
-  printx_bytes(buff, (int)sizeof(buff));
+  /* Recibir respuesta del servidor */
+  recv(sockfd, recv_buf, BUF_RECV_MAX, 0);
+  printf("Mensaje recibido:\n%s\n", recv_buf);
 
   /* Mostrar datos al usuario */
-  memcpy(&weather, buff, sizeof(weather));
-  printf("Datos del clima recibidos: {%s, %d, %.1f}\n",
-          weather.date, weather.cond, weather.temp);
+  printf("Datos del clima y el horóscopo:\n");
+  print_json(recv_buf);
 
   return NULL;
 }
 
-/**
- * Ejecuta un cliente TCP básico:
- * 1. socket()
- * 2. connect()
- * 3. send()/recv()
- * 4. close()
- *
- * @param argc cantidad de argumentos de línea de comandos
- * @param argv argumentos de línea de comandos
- * @return 0 si la ejecución es exitosa, 1 si falla
- */
-int main(int argc, char **argv)
+static void read_line(char *buffer, int buffer_limit)
 {
-  GError         *error = NULL;
-  GOptionContext *context;
-  GThread        *client_thread;
-  TcpClient      *client;
+  int i = 0;
+  while (i < buffer_limit-1 && (buffer[i++] = getchar()) != '\n');
+  buffer[strcspn(buffer, "\n")] = 0;
+}
 
-  context = g_option_context_new("- Cliente TCP");
-  g_option_context_add_main_entries(context, options, NULL);
-
-  if (!g_option_context_parse(context, &argc, &argv, &error)) {
-    fprintf(stderr, "%s\n", error->message);
-    return EXIT_FAILURE;
-  }
-
-  g_option_context_free(context);
-  client = tcp_client_new(host, port);
+static int main_loop()
+{
   g_return_val_if_fail(client != NULL, EXIT_FAILURE);
 
+  GError *error = NULL;
+  GThread *client_thread;
+
   bool exit = FALSE;
-  int  buff_len = 0;
-  char buff[MAX_BUFF];
+  char send_buf[BUF_SEND_MAX+1];
+  char date_arg[USR_READ_MAX];
+  char sign_arg[USR_READ_MAX];
 
   do {
-    /* Leer mensaje del usuario */
-    printf("Escribir mensaje:\n");
-    memset(buff, 0, sizeof(buff));
-    while (buff_len < sizeof(buff)-1 && (buff[buff_len++] = getchar()) != '\n');
-    buff_len = 0;
+    memset(send_buf, 0, sizeof(send_buf));
+    memset(date_arg, 0, sizeof(date_arg));
+    memset(sign_arg, 0, sizeof(sign_arg));
 
-    /* Salir si se escribe el mensaje TOK_EXIT */
-    if ((strncmp(buff, TOK_EXIT, strlen(TOK_EXIT))) == 0) {
-      exit = TRUE;
-      continue;
-    }
+    /* Leer solicitud del usuario */
+    printf("Escribir fecha:\n");
+    read_line(date_arg, sizeof(date_arg));
+    printf("Escribir signo:\n");
+    read_line(sign_arg, sizeof(sign_arg));
+    sprintf(send_buf, "{\"date\":\"%s\",\"sign\":\"%s\"}", date_arg, sign_arg);
 
-    client_thread = tcp_client_run(client, client_func, buff, &error);
+    /* Ejecutar función del cliente en un nuevo hilo */
+    client_thread = tcp_client_run(client, client_func, send_buf, &error);
 
     if (error != NULL) {
       fprintf(stderr, "%s\n", error->message);
@@ -154,12 +162,42 @@ int main(int argc, char **argv)
 
     if (client_thread != NULL) {
       g_thread_join(client_thread);
-      g_thread_unref(client_thread);
+    }
+
+    printf("¿Hacer otra consulta? (S/n):\n");
+    switch (getchar()) {
+      case 'N':
+      case 'n':
+        exit = TRUE;
+      break;
     }
 
   } while (!exit);
 
+  return EXIT_SUCCESS;
+}
+
+int main(int argc, char **argv)
+{
+  GError         *error = NULL;
+  GOptionContext *context;
+  int             retval = EXIT_SUCCESS;
+
+  context = g_option_context_new("- Cliente TCP");
+  g_option_context_add_main_entries(context, options, NULL);
+  g_option_context_parse(context, &argc, &argv, &error);
+  g_option_context_free(context);
+
+  if (error != NULL) {
+    fprintf(stderr, "%s\n", error->message);
+    g_error_free(error);
+    return EXIT_FAILURE;
+  }
+
+  json_parser = json_parser_new();
+  client = tcp_client_new(host, port);
+  retval = main_loop();
   tcp_client_free(client);
 
-  return EXIT_SUCCESS;
+  return retval;
 }
