@@ -43,9 +43,9 @@
 /* Indica si se usan hilos exclusivos (no por defecto) */
 #define SRV_EXC_THREADS  false
 /* Cantidad máxima para envío de bytes */
-#define SRV_SEND_MAX     255
+#define SRV_SEND_MAX     1024
 /* Cantidad máxima para recepción de bytes */
-#define SRV_RECV_MAX     20
+#define SRV_RECV_MAX     1024
 
 /* Dirección del servidor */
 static uint32_t addr = SRV_ADDR;
@@ -95,66 +95,70 @@ static TcpClient *weather_client = NULL;
 /* Cliente para el servidor del horóscopo */
 static TcpClient *horoscope_client = NULL;
 
-static void *get_weather(int sockfd, gpointer _request)
+static void *get_weather(int sockfd, gpointer data)
 {
-  Request *request = (Request*)_request;
+  char *request = (char*)data;
 
   g_return_val_if_fail(sockfd != -1, NULL);
   g_return_val_if_fail(request != NULL, NULL);
 
-  char recv_buf[request->recv_len];
+  char recv_buf[SRV_SEND_MAX+1];
+  int send_len = strlen(request);
 
-  printf("Enviar mensaje al servidor del clima.\n");
-  send(sockfd, request->send, request->send_len, 0);
+  memset(recv_buf, 0, sizeof(recv_buf));
+  send(sockfd, request, send_len, 0);
+  recv(sockfd, recv_buf, SRV_SEND_MAX, 0);
 
-  printf("Recibir mensaje del servidor del clima.\n");
-  recv(sockfd, recv_buf, request->recv_len, 0);
-  memcpy(request->recv, recv_buf, request->recv_len);
-
-  return NULL;
+  return g_strdup(recv_buf);
 }
 
-void serve(gpointer data, gpointer user_data)
+static void serve(gpointer data, gpointer user_data)
 {
   int connfd = GPOINTER_TO_INT(data);
   g_return_if_fail(connfd != -1);
 
   GError *error = NULL;
   GThread *weather_thread = NULL;
-  Date date = DATE_INIT;
-  WeatherInfo weather = WEATHER_INFO_INIT;
-  Request req = REQUEST_INIT;
+  char *weather_response = NULL;
+  char recv_buf[SRV_RECV_MAX+1];
+  char send_buf[SRV_SEND_MAX+1];
   int recv_len = 0;
-  char recv_buf[SRV_RECV_MAX];
-  char send_buf[SRV_SEND_MAX];
+  int send_len = 0;
+
   memset(recv_buf, 0, sizeof(recv_buf));
   memset(send_buf, 0, sizeof(send_buf));
 
   /* Leer solicitud del cliente */
-  recv_len = recv(connfd, recv_buf, sizeof(recv_buf), 0);
+  recv_len = recv(connfd, recv_buf, SRV_RECV_MAX, 0);
   if (recv_len > 0) {
-    memcpy(&date, recv_buf, sizeof(date));
+    printf("Mensaje recibido:\n%s\n", recv_buf);
     printf("Bytes recibidos:\n");
     printx_bytes(recv_buf, recv_len);
 
     /* Solicitar datos del clima */
-    req.send = &date;
-    req.recv = &weather;
-    req.send_len = sizeof(date);
-    req.recv_len = sizeof(weather);
-    weather_thread = tcp_client_run(weather_client, get_weather, &req, &error);
+    printf("Enviando mensaje al servidor del clima...\n");
+    weather_thread = tcp_client_run(weather_client,
+                                    get_weather,
+                                    &recv_buf,
+                                    &error);
 
     if (weather_thread != NULL) {
-      g_thread_join(weather_thread);
-      g_thread_unref(weather_thread);
-      memcpy(send_buf, &weather, sizeof(weather));
-      printf("Datos del clima recibidos: {%s, %d, %.1f}\n",
-             weather.date, weather.cond, weather.temp);
-
-      /* Enviar datos obtenidos al cliente */
-      send(connfd, send_buf, sizeof(send_buf), 0);
+      weather_response = g_thread_join(weather_thread);
+      printf("Datos del clima recibidos:\n%s\n", weather_response);
     }
   }
+
+  /* Armar respuesta */
+  if (weather_response != NULL) {
+    send_len = sprintf(send_buf,
+                       "{\"clima\":%s,\"horoscopo\":null}",
+                       weather_response);
+
+    g_free(weather_response);
+  }
+
+  /* Enviar respuesta al cliente */
+  send(connfd, send_buf, send_len, 0);
 
   close(connfd);
   printf("Desconectado del cliente.\n");
