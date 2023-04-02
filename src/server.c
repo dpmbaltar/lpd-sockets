@@ -119,7 +119,9 @@ static void serve(gpointer data, gpointer user_data)
 
   GError *error = NULL;
   GThread *weather_thread = NULL;
+  GThread *horoscope_thread = NULL;
   char *weather_response = NULL;
+  char *horoscope_response = NULL;
   char recv_buf[SRV_RECV_MAX+1];
   char send_buf[SRV_SEND_MAX+1];
   int recv_len = 0;
@@ -142,22 +144,30 @@ static void serve(gpointer data, gpointer user_data)
                                     &recv_buf,
                                     &error);
 
+    /* Solicitar datos del horóscopo */
+    printf("Enviando mensaje al servidor del horóscopo...\n");
+    horoscope_thread = tcp_client_run(horoscope_client,
+                                      get_weather,
+                                      &recv_buf,
+                                      &error);
+
     if (weather_thread != NULL) {
       weather_response = g_thread_join(weather_thread);
       printf("Datos del clima recibidos:\n%s\n", weather_response);
     }
+
+    if (horoscope_thread != NULL) {
+      horoscope_response = g_thread_join(horoscope_thread);
+      printf("Datos del horóscopo recibidos:\n%s\n", horoscope_response);
+    }
   }
 
-  /* Armar respuesta */
-  if (weather_response != NULL) {
-    send_len = sprintf(send_buf,
-                       "{\"clima\":%s,\"horoscopo\":null}",
-                       weather_response);
-
-    g_free(weather_response);
-  }
-
-  /* Enviar respuesta al cliente */
+  /* Armar y enviar respuesta */
+  send_len = sprintf(send_buf, "{\"clima\":%s,\"horoscopo\":%s}",
+                     weather_response,
+                     horoscope_response);
+  g_free(weather_response);
+  g_free(horoscope_response);
   send(connfd, send_buf, send_len, 0);
 
   close(connfd);
