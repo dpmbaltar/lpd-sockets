@@ -95,7 +95,7 @@ static TcpClient *weather_client = NULL;
 /* Cliente para el servidor del horóscopo */
 static TcpClient *horoscope_client = NULL;
 
-static void *get_weather(int sockfd, gpointer data)
+static void *get_info(int sockfd, gpointer data)
 {
   char *request = (char*)data;
 
@@ -140,14 +140,14 @@ static void serve(gpointer data, gpointer user_data)
     /* Solicitar datos del clima */
     printf("Enviando mensaje al servidor del clima...\n");
     weather_thread = tcp_client_run(weather_client,
-                                    get_weather,
+                                    get_info,
                                     &recv_buf,
                                     &error);
 
     /* Solicitar datos del horóscopo */
     printf("Enviando mensaje al servidor del horóscopo...\n");
     horoscope_thread = tcp_client_run(horoscope_client,
-                                      get_weather,
+                                      get_info,
                                       &recv_buf,
                                       &error);
 
