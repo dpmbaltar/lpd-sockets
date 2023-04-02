@@ -193,33 +193,10 @@ static char *weather_to_json(WeatherInfo *weather_info)
 {
   g_return_val_if_fail(weather_info != NULL, NULL);
 
-  char *json = NULL;
-  JsonBuilder *builder;
-  JsonGenerator *generator;
-  JsonNode *root;
-
-  builder = json_builder_new();
-  json_builder_begin_object(builder);
-  json_builder_set_member_name(builder, "date");
-  json_builder_add_string_value(builder, weather_info->date);
-  json_builder_set_member_name(builder, "temp");
-  json_builder_add_double_value(builder, weather_info->temp);
-  json_builder_set_member_name(builder, "cond");
-  json_builder_add_int_value(builder, weather_info->cond);
-  json_builder_set_member_name(builder, "cond_str");
-  json_builder_add_string_value(builder, conditions[(int)weather_info->cond]);
-  json_builder_end_object(builder);
-
-  generator = json_generator_new();
-  root = json_builder_get_root(builder);
-  json_generator_set_root(generator, root);
-  json = json_generator_to_data(generator, NULL);
-
-  json_node_free(root);
-  g_object_unref(generator);
-  g_object_unref(builder);
-
-  return json;
+  return g_strdup_printf("{\"fecha\":\"%s\",\"temp\":%.1f,\"cond\":\"%s\"}",
+                         weather_info->date,
+                         weather_info->temp,
+                         conditions[(int)weather_info->cond]);
 }
 
 static void serve_weather(gpointer data, gpointer user_data)
