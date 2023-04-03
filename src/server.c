@@ -8,7 +8,43 @@
  * Programa del servidor princpal (TCP), que recibe consultas en formato JSON de
  * un cliente y las reenvía a los servidores del clima y horóscopo. Luego, de
  * las respuestas obtenidas, se arma una única respuesta en formato JSON y se la
- * envía de vuelta al cliente, y finalmente cerrando la conexión.
+ * envía de vuelta al cliente, y finalmente cerrando la conexión. A continuación
+ * se muestra un diagrama de secuencia mostrando una interacción típica con el
+ * servidor principal:
+ *
+ * @startuml{server.png} "Diagrama de Secuencia"
+ * actor "Usuario"
+ * participant "Cliente"
+ * participant "Servidor Principal" as SP
+ * participant "Servidor Clima" as SC
+ * participant "Servidor Horóscopo" as SH
+ *
+ * Usuario -> Cliente : fecha, signo
+ * activate Cliente
+ *
+ * Cliente ->(10) SP : {fecha, signo}
+ * activate SP
+ *
+ * par
+ *   SP ->(10) SC : {fecha, signo}
+ *   activate SC
+ *   SC -->(10) SP : {clima}
+ *   deactivate SC
+ * else
+ *   SP ->(20) SH : {fecha, signo}
+ *   activate SH
+ *   SH -->(20) SP : {horóscopo}
+ *   deactivate SH
+ * end
+ *
+ * SP -->(10) Cliente : {clima,horóscopo}
+ * deactivate SP
+ *
+ * Cliente --> Usuario : {clima,horóscopo}
+ * deactivate Cliente
+ *
+ * hide footbox
+ * @enduml
  *
  * Para cada consulta recibida, se utiliza un "pool" de hilos, es decir, que el
  * servidor reutiliza una serie de hilos para satisfacer las consultas de los
