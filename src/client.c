@@ -55,27 +55,10 @@ static TcpClient *client = NULL;
 /* Instancia de JsonParser */
 static JsonParser *json_parser = NULL;
 
-static JsonNode *parse_json(const char *data, int length)
-{
-  GError *error = NULL;
-
-  g_return_val_if_fail(data != NULL, NULL);
-
-  json_parser_load_from_data(json_parser, data, length, &error);
-
-  if (error != NULL) {
-    g_print("Error al obtener JSON `%s`: %s\n", data, error->message);
-    g_error_free(error);
-    return NULL;
-  }
-
-  return json_parser_steal_root(json_parser);
-}
-
 static void print_json(const char *data)
 {
   JsonGenerator *generator;
-  JsonNode *root = parse_json(data, strlen(data));
+  JsonNode *root = parse_json(data, strlen(data), json_parser);
   char *json = NULL;
 
   if (root != NULL) {

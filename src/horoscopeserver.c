@@ -151,40 +151,6 @@ static void get_horoscope(AstroInfo *astro_info, int day, unsigned int sign)
   g_mutex_unlock(&mutex);
 }
 
-static JsonNode *parse_json(const char *data, int length)
-{
-  GError *error = NULL;
-
-  g_return_val_if_fail(data != NULL, NULL);
-
-  json_parser_load_from_data(json_parser, data, length, &error);
-
-  if (error != NULL) {
-    g_print("Error al obtener JSON `%s`: %s\n", data, error->message);
-    g_error_free(error);
-    return NULL;
-  }
-
-  return json_parser_steal_root(json_parser);
-}
-
-static GDate *parse_date(const char *data)
-{
-  GDate *date;
-
-  g_return_val_if_fail(data != NULL, NULL);
-
-  date = g_date_new();
-  g_date_set_parse(date, data);
-
-  if (!g_date_valid(date)) {
-    g_date_free(date);
-    date = NULL;
-  }
-
-  return date;
-}
-
 static int parse_sign(const char *data)
 {
   g_return_val_if_fail(data != NULL, -1);
@@ -218,7 +184,7 @@ static void get_client_args(const char *data, int *arg_day, int *arg_sign)
   JsonNode *json_node = NULL;
   JsonObject *json_object = NULL;
 
-  json_node = parse_json(data, strlen(data));
+  json_node = parse_json(data, strlen(data), json_parser);
   json_object = json_node_get_object(json_node);
   sign_str = json_object_get_string_member(json_object, "sign");
   date_str = json_object_get_string_member(json_object, "date");

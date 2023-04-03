@@ -124,40 +124,6 @@ static void get_weather(WeatherInfo *weather_info, int day)
   g_mutex_unlock(&mutex);
 }
 
-static JsonNode *parse_json(const char *data, int length)
-{
-  GError *error = NULL;
-
-  g_return_val_if_fail(data != NULL, NULL);
-
-  json_parser_load_from_data(json_parser, data, length, &error);
-
-  if (error != NULL) {
-    g_print("Error al obtener JSON `%s`: %s\n", data, error->message);
-    g_error_free(error);
-    return NULL;
-  }
-
-  return json_parser_steal_root(json_parser);
-}
-
-static GDate *parse_date(const char *data)
-{
-  GDate *date;
-
-  g_return_val_if_fail(data != NULL, NULL);
-
-  date = g_date_new();
-  g_date_set_parse(date, data);
-
-  if (!g_date_valid(date)) {
-    g_date_free(date);
-    date = NULL;
-  }
-
-  return date;
-}
-
 static int get_weather_day(const char *data, int length)
 {
   struct timeval time;
@@ -171,7 +137,7 @@ static int get_weather_day(const char *data, int length)
   g_return_val_if_fail(data != NULL, -1);
   g_return_val_if_fail(length > 0, -1);
 
-  json_node = parse_json(data, length);
+  json_node = parse_json(data, length, json_parser);
   json_object = json_node_get_object(json_node);
   date_str = json_object_get_string_member(json_object, "date");
   date = parse_date(date_str);
