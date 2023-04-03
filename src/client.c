@@ -147,7 +147,7 @@ static int main_loop()
       g_thread_join(client_thread);
     }
 
-    printf("¿Hacer otra consulta? (S/n):\n");
+    printf("Presionar Entrar para otra consulta / N para salir\n");
     switch (getchar()) {
       case 'N':
       case 'n':
