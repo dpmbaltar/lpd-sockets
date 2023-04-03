@@ -213,40 +213,12 @@ static char *astro_to_json(AstroInfo *astro_info)
 {
   g_return_val_if_fail(astro_info != NULL, NULL);
 
-  char *json = NULL;
-  JsonBuilder *builder;
-  JsonGenerator *generator;
-  JsonNode *root;
-
-  builder = json_builder_new();
-  json_builder_begin_object(builder);
-  json_builder_set_member_name(builder, "sign");
-  json_builder_add_int_value(builder, astro_info->sign);
-  json_builder_set_member_name(builder, "sign_s");
-  json_builder_add_string_value(builder, astro_signs[astro_info->sign]);
-  json_builder_set_member_name(builder, "sign_compat");
-  json_builder_add_int_value(builder, astro_info->sign_compat);
-  json_builder_set_member_name(builder, "sign_compat_s");
-  json_builder_add_string_value(builder, astro_signs[astro_info->sign_compat]);
-  json_builder_set_member_name(builder, "date_range");
-  json_builder_begin_array(builder);
-  json_builder_add_string_value(builder, astro_info->date_range[0]);
-  json_builder_add_string_value(builder, astro_info->date_range[1]);
-  json_builder_end_array(builder);
-  json_builder_set_member_name(builder, "mood");
-  json_builder_add_string_value(builder, astro_info->mood);
-  json_builder_end_object(builder);
-
-  generator = json_generator_new();
-  root = json_builder_get_root(builder);
-  json_generator_set_root(generator, root);
-  json = json_generator_to_data(generator, NULL);
-
-  json_node_free(root);
-  g_object_unref(generator);
-  g_object_unref(builder);
-
-  return json;
+  return g_strdup_printf("{\"signo\":\"%s\",\"compat\":\"%s\",\"periodo\":[\"%s\",\"%s\"],\"estado\":\"%s\"}",
+                         astro_signs[astro_info->sign],
+                         astro_signs[astro_info->sign_compat],
+                         astro_info->date_range[0],
+                         astro_info->date_range[1],
+                         astro_info->mood);
 }
 
 static void serve_horoscope(gpointer data, gpointer user_data)
