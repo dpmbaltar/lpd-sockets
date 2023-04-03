@@ -17,9 +17,9 @@
  * A continuación se detallan las opciones por parámetros que toma el servidor,
  * que también puede verse al ejecutar el programa con el parámetro -h o --help:
  *
- * \code{.unparsed}
+ * @code{.unparsed}
  * ./server --help
- * \endcode
+ * @endcode
  *
  * Resultado:
  *
