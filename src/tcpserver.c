@@ -27,15 +27,6 @@
 /* Utilizar threads exclusivos o no */
 #define EXCLUSIVE_THREAD_POOL FALSE
 
-/* Macro de ayuda */
-#define return_throw_new_if(c,e,d) \
-    if (c) {\
-        error = g_error_new_literal(TCP_SERVER_ERROR, e, error_messages[e]);\
-        g_propagate_error(d, error);\
-        error = NULL;\
-        return;\
-    }
-
 G_DEFINE_QUARK(tcp-server-error, tcp_server_error)
 
 struct _TcpServer
@@ -47,13 +38,19 @@ struct _TcpServer
   GThreadPool *thread_pool;
 };
 
-static GError *error = NULL;
 static const char *error_messages[] = {
   [TCP_SERVER_SOCK_ERROR]        = "Error al crear socket",
   [TCP_SERVER_SOCK_BIND_ERROR]   = "Error al enlazar socket",
   [TCP_SERVER_SOCK_LISTEN_ERROR] = "Error al escuchar socket",
   [TCP_SERVER_SOCK_ACCEPT_ERROR] = "Error al aceptar conexión",
 };
+
+/* Macro para manejar errores */
+#define return_set_error_if(cond, error, code) \
+  if (cond) {\
+    g_set_error(error, TCP_SERVER_ERROR, code, error_messages[code]);\
+    return;\
+  }
 
 TcpServer *tcp_server_new_full(uint32_t  addr,
                                uint16_t  port,
@@ -100,7 +97,6 @@ void tcp_server_run(TcpServer  *srv,
   struct sockaddr_in srvaddr, cliaddr;
   socklen_t srvaddr_len = sizeof(srvaddr);
   socklen_t cliaddr_len = sizeof(cliaddr);
-  GError *local_err = NULL;
 
 #ifdef G_OS_WIN32
   /**
@@ -123,30 +119,29 @@ void tcp_server_run(TcpServer  *srv,
 
   /* Crear socket */
   sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-  return_throw_new_if(sockfd == -1, TCP_SERVER_SOCK_ERROR, err);
+  return_set_error_if(sockfd == -1, err, TCP_SERVER_SOCK_ERROR);
   printf("Socket creado correctamente...\n");
 
   /* Enlazar socket creado a IP/puerto */
   binded = bind(sockfd, (struct sockaddr*)&srvaddr, srvaddr_len);
-  return_throw_new_if(binded == -1, TCP_SERVER_SOCK_BIND_ERROR, err);
+  return_set_error_if(binded == -1, err, TCP_SERVER_SOCK_BIND_ERROR);
   printf("Socket enlazado correctamente...\n");
 
   /* Escuchar puerto */
   listening = listen(sockfd, srv->max_conn);
-  return_throw_new_if(listening == -1, TCP_SERVER_SOCK_LISTEN_ERROR, err);
+  return_set_error_if(listening == -1, err, TCP_SERVER_SOCK_LISTEN_ERROR);
   printf("Servidor escuchando puerto %d...\n", srv->port);
 
   do {
     /* Aceptar conexión de cliente */
     connfd = accept(sockfd, (struct sockaddr*)&cliaddr, &cliaddr_len);
-    return_throw_new_if(connfd == -1, TCP_SERVER_SOCK_ACCEPT_ERROR, err);
+    return_set_error_if(connfd == -1, err, TCP_SERVER_SOCK_ACCEPT_ERROR);
     printf("Conexión aceptada...\n");
 
     /* Ejecutar función del servidor en otro hilo */
-    g_thread_pool_push(srv->thread_pool, GINT_TO_POINTER(connfd), &local_err);
+    g_thread_pool_push(srv->thread_pool, GINT_TO_POINTER(connfd), err);
 
-    if (local_err != NULL) {
-        g_propagate_error(err, local_err);
+    if (*err != NULL) {
         break;
     }
 
