@@ -1,3 +1,37 @@
+/**
+ * @file client.c
+ * @author Diego Pablo Matias Baltar (diego.baltar@est.fi.uncoma.edu.ar)
+ * @brief Cliente para el servidor principal
+ * @version 0.1
+ * @date 2023-04-04
+ *
+ * Programa del cliente para interactuar con el servidor principal. También se
+ * puede utilizar para interactuar de manera independiente con el servidor del
+ * clima y del horóscopo, indicando el puerto por el parámetro -p al iniciarse.
+ * En el caso del servidor del clima, se puede omitir ingresar el signo, ya que
+ * se ignora dicho parámetro.
+ *
+ * A continuación se detallan las opciones por parámetros que toma el cliente,
+ * que también puede verse al ejecutar el programa con el parámetro -h o --help:
+ *
+ * @code{.unparsed}
+ * ./client --help
+ * @endcode
+ *
+ * Resultado:
+ *
+ * @code{.unparsed}
+ * Uso:
+ *   client [OPTION?] - Cliente TCP
+ *
+ * Opciones de ayuda:
+ *   -h, --help       Muestra ayuda de opciones
+ *
+ * Opciones de aplicación:
+ *   -H, --host=H     Host del servidor (127.0.0.1 por defecto)
+ *   -p, --port=P     Puerto del servidor (24000 por defecto)
+ * @endcode
+ */
 #include <glib.h>
 #include <glib-object.h>
 #include <json-glib/json-glib.h>
@@ -24,15 +58,15 @@
 #include "types.h"
 #include "util.h"
 
-/* Host del servidor por defecto */
+/** Host del servidor por defecto */
 #define SRV_HOST "127.0.0.1"
-/* Puerto del servidor por defecto */
+/** Puerto del servidor por defecto */
 #define SRV_PORT 24000
-/* Cantidad máxima de datos a enviar al servidor */
+/** Cantidad máxima de datos a enviar al servidor */
 #define BUF_SEND_MAX 255
-/* Cantidad máxima de datos a leer del servidor */
+/** Cantidad máxima de datos a leer del servidor */
 #define BUF_RECV_MAX 1023
-/* Cantidad máxima de datos a leer del usuario */
+/** Cantidad máxima de datos a leer del usuario */
 #define USR_READ_MAX 80
 
 /* Host del servidor */
