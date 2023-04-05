@@ -1,3 +1,36 @@
+/**
+ * @file weatherserver.c
+ * @author Diego Pablo Matias Baltar (diego.baltar@est.fi.uncoma.edu.ar)
+ * @brief Servidor del clima
+ * @version 0.1
+ * @date 2023-04-04
+ *
+ * Programa del servidor del clima, que recibe consultas por fechas, válidas a
+ * partir de la fecha actual, hasta siete días en adelante. Los datos del clima
+ * se guardan en memoria por 1 hora. Si se consulta luego de 1 hora generado los
+ * datos, se actualizan.
+ *
+ * A continuación se detallan las opciones por parámetros que toma el servidor,
+ * que también puede verse al ejecutar el programa con el parámetro -h o --help:
+ *
+ * @code{.unparsed}
+ * ./weather_server --help
+ * @endcode
+ *
+ * Resultado:
+ *
+ * @code{.unparsed}
+ * Uso:
+ *   weather_server [OPTION?] - Servidor del clima
+ *
+ * Opciones de ayuda:
+ *   -h, --help       Muestra ayuda de opciones
+ *
+ * Opciones de aplicación:
+ *   -a, --addr=A     Direccion A (0 = INADDR_ANY por defecto)
+ *   -p, --port=P     Puerto P > 1024 del servidor (24001 por defecto)
+ * @endcode
+ */
 #include <glib.h>
 #include <glib-object.h>
 #include <json-glib/json-glib.h>
@@ -24,30 +57,30 @@
 #include "types.h"
 #include "util.h"
 
-/* Nombre del servidor */
+/** Nombre del servidor */
 #define SRV_NAME     "Servidor del clima"
-/* Descripción del programa */
+/** Descripción del programa */
 #define SRV_INFO     "- Servidor del clima"
-/* Dirección del servidor por defecto */
+/** Dirección del servidor por defecto */
 #define SRV_ADDR     INADDR_ANY
-/* Puerto del servidor por defecto */
+/** Puerto del servidor por defecto */
 #define SRV_PORT     24001
-/* Cantidad máxima para envío de bytes */
+/** Cantidad máxima para envío de bytes */
 #define SRV_SEND_MAX 1024
-/* Cantidad máxima para recepción de bytes */
+/** Cantidad máxima para recepción de bytes */
 #define SRV_RECV_MAX 1024
-/* TTL para datos del clima (segundos) */
+/** TTL para datos del clima (segundos) */
 #define SRV_DATA_TTL 3600
 
-/* Mímino de días para el clima, a partir de la fecha actual */
+/** Mímino de días para el clima, a partir de la fecha actual */
 #define W_MIN_DAYS    0
-/* Máximo de días para el clima, a partir de la fecha actual */
+/** Máximo de días para el clima, a partir de la fecha actual */
 #define W_MAX_DAYS    7
-/* Temperatura mínima para generar datos del clima */
+/** Temperatura mínima para generar datos del clima */
 #define W_MIN_TEMP    -25.0F
-/* Temperatura máxima para generar datos del clima */
+/** Temperatura máxima para generar datos del clima */
 #define W_MAX_TEMP    50.0F
-/* Formato de fecha para generar datos del clima */
+/** Formato de fecha para generar datos del clima */
 #define W_DATE_FORMAT "%Y-%m-%d"
 
 /* Dirección del servidor */
@@ -59,8 +92,8 @@ static uint16_t port = SRV_PORT;
 /* Opciones de línea de comandos */
 static GOptionEntry options[] =
 {
-  { "addr", 'a', 0, G_OPTION_ARG_INT, &addr, "Direccion (0=INADDR_ANY)", "A" },
-  { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Puerto (>1024)", "P" },
+  { "addr", 'a', 0, G_OPTION_ARG_INT, &addr, "Direccion A (0 = INADDR_ANY por defecto)", "A" },
+  { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Puerto P > 1024 del servidor (24001 por defecto)", "P" },
   { NULL }
 };
 
