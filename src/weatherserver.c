@@ -157,8 +157,11 @@ static void get_weather(WeatherInfo *weather_info, int day)
   g_mutex_unlock(&mutex);
 }
 
-static int get_weather_day(const char *data, int length)
+static void get_client_args(const char *data, int *arg_day)
 {
+  g_return_if_fail(data != NULL);
+  g_return_if_fail(arg_day != NULL);
+
   struct timeval time;
   int day = -1;
   const char *date_str = NULL;
@@ -167,10 +170,7 @@ static int get_weather_day(const char *data, int length)
   JsonNode *json_node = NULL;
   JsonObject *json_object = NULL;
 
-  g_return_val_if_fail(data != NULL, -1);
-  g_return_val_if_fail(length > 0, -1);
-
-  json_node = parse_json(data, length, json_parser);
+  json_node = parse_json(data, strlen(data), json_parser);
   json_object = json_node_get_object(json_node);
   date_str = json_object_get_string_member(json_object, "date");
   date = parse_date(date_str);
@@ -185,7 +185,7 @@ static int get_weather_day(const char *data, int length)
     g_date_free(today);
   }
 
-  return day >= W_MIN_DAYS && day <= W_MAX_DAYS ? day : -1;
+  *arg_day = day >= W_MIN_DAYS && day <= W_MAX_DAYS ? day : -1;
 }
 
 static char *weather_to_json(WeatherInfo *weather_info)
@@ -203,8 +203,8 @@ static void serve_weather(gpointer data, gpointer user_data)
   int connfd = GPOINTER_TO_INT(data);
   g_return_if_fail(connfd != -1);
 
-  int weather_day = -1;
-  int send_len = 0;
+  int arg_day = -1;
+  int send_len = SRV_SEND_MAX;
   char recv_buff[SRV_RECV_MAX+1];
   char send_buff[SRV_SEND_MAX+1];
 
@@ -218,15 +218,15 @@ static void serve_weather(gpointer data, gpointer user_data)
   printx_bytes(recv_buff, strlen(recv_buff));
 
   /* Analizar datos recibidos */
-  weather_day = get_weather_day(recv_buff, strlen(recv_buff));
+  get_client_args(recv_buff, &arg_day);
 
   /* Preparar datos para el envío */
-  if (weather_day != -1) {
+  if (arg_day != -1) {
     WeatherInfo weather;
     char *weather_json;
 
     memset(&weather, 0, sizeof(WeatherInfo));
-    get_weather(&weather, weather_day);
+    get_weather(&weather, arg_day);
     weather_json = weather_to_json(&weather);
     send_len = MIN(SRV_SEND_MAX, strlen(weather_json));
     memcpy(send_buff, weather_json, send_len);
