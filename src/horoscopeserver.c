@@ -255,9 +255,8 @@ static char *astro_to_json(AstroInfo *astro_info)
                          astro_info->mood);
 }
 
-static void serve_horoscope(gpointer data, gpointer user_data)
+static void serve_horoscope(int connfd, void *data)
 {
-  int connfd = GPOINTER_TO_INT(data);
   g_return_if_fail(connfd != -1);
 
   int arg_day = -1;
@@ -301,10 +300,6 @@ static void serve_horoscope(gpointer data, gpointer user_data)
   printf("Mensaje enviado:\n%s\n", send_buff);
   printf("Bytes enviados (%d):\n", send_len);
   printx_bytes(send_buff, send_len);
-
-  /* Cerrar conexión */
-  close(connfd);
-  printf("Desconectado del cliente.\n");
 }
 
 int main(int argc, char **argv)
@@ -353,8 +348,8 @@ int main(int argc, char **argv)
 
   printf("Iniciando %s...\n", SRV_NAME);
   json_parser = json_parser_new();
-  server = tcp_server_new(addr, port, serve_horoscope, NULL);
-  tcp_server_run(server, &error);
+  server = tcp_server_new(addr, port);
+  tcp_server_run(server, serve_horoscope, NULL, &error);
   tcp_server_free(server);
   g_object_unref(json_parser);
 

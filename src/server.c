@@ -175,7 +175,7 @@ static TcpClient *weather_client = NULL;
 /* Cliente para el servidor del horóscopo */
 static TcpClient *horoscope_client = NULL;
 
-static void *get_info(int sockfd, gpointer data)
+static void *get_info(int sockfd, void *data)
 {
   char *request = (char*)data;
 
@@ -192,9 +192,8 @@ static void *get_info(int sockfd, gpointer data)
   return g_strdup(recv_buf);
 }
 
-static void serve(gpointer data, gpointer user_data)
+static void serve(int connfd, void *data)
 {
-  int connfd = GPOINTER_TO_INT(data);
   g_return_if_fail(connfd != -1);
 
   GError *error = NULL;
@@ -251,9 +250,6 @@ static void serve(gpointer data, gpointer user_data)
   g_free(weather_response);
   g_free(horoscope_response);
   send(connfd, send_buf, send_len, 0);
-
-  close(connfd);
-  printf("Desconectado del cliente.\n");
 }
 
 int main(int argc, char **argv)
@@ -285,9 +281,8 @@ int main(int argc, char **argv)
   printf("Iniciando %s...\n", SRV_NAME);
   weather_client = tcp_client_new(weather_host, weather_port);
   horoscope_client = tcp_client_new(horoscope_host, horoscope_port);
-  server = tcp_server_new_full(addr, port, serve, NULL, max_conn, max_threads,
-                               exclusive);
-  tcp_server_run(server, &error);
+  server = tcp_server_new_full(addr, port, max_conn, max_threads, exclusive);
+  tcp_server_run(server, serve, NULL, &error);
   tcp_server_free(server);
   tcp_client_free(weather_client);
   tcp_client_free(horoscope_client);
