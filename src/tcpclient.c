@@ -23,21 +23,21 @@
 /* Define el dominio de errores TCP_CLIENT_ERROR */
 G_DEFINE_QUARK(tcp-client-error, tcp_client_error)
 
-struct _TcpClient
+/** Contiene una configuración para un cliente TCP */
+struct TcpClient
 {
   /** @privatesection */
   const char *host;
   uint16_t    port;
 };
 
-struct _TcpClientThreadArgs
+/** @private */
+typedef struct TcpClientThreadArgs
 {
-  TcpClientFunc func;
-  gpointer      data;
-  int           sock;
-};
-
-typedef struct _TcpClientThreadArgs TcpClientThreadArgs;
+  TcpClientFunc  func;
+  void          *data;
+  int            sock;
+} TcpClientThreadArgs;
 
 /* Mensajes de error */
 static const char *error_messages[] = {
@@ -61,12 +61,12 @@ TcpClient *tcp_client_new(const char *host, uint16_t port)
   return client;
 }
 
-static gpointer run_client_thread(gpointer data)
+static void *run_client_thread(void *data)
 {
-  gpointer retval = NULL;
+  void *retval = NULL;
   TcpClientThreadArgs *args = (TcpClientThreadArgs*)data;
 
-  g_return_val_if_fail(args != NULL, retval);
+  g_return_val_if_fail(args != NULL, NULL);
 
   retval = args->func(args->sock, args->data);
 #ifdef G_OS_UNIX
@@ -84,7 +84,7 @@ static gpointer run_client_thread(gpointer data)
 
 GThread *tcp_client_run(TcpClient      *client,
                         TcpClientFunc   func,
-                        gpointer        func_data,
+                        void           *data,
                         GError        **error)
 {
   g_return_val_if_fail(client != NULL, NULL);
@@ -103,7 +103,7 @@ GThread *tcp_client_run(TcpClient      *client,
   WSADATA wsa_data;
   int result = WSAStartup(MAKEWORD(2,2), &wsa_data);
   if (result != 0) {
-    printf("WSAStartup failed: %d\n", result);
+    printf("WSAStartup falló: %d\n", result);
     return NULL;
   }
 #endif
@@ -127,7 +127,7 @@ GThread *tcp_client_run(TcpClient      *client,
   /* Preparar parámetros para función del cliente */
   thread_args = g_new0(TcpClientThreadArgs, 1);
   thread_args->func = func;
-  thread_args->data = func_data;
+  thread_args->data = data;
   thread_args->sock = sockfd;
 
   /* Ejecutar función del cliente en un nuevo thread, si es posible */
