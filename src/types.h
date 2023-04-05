@@ -52,7 +52,7 @@ typedef enum {
 
 /** Información del clima */
 typedef struct {
-  char  date[11];
-  char  cond;
-  float temp;
+  char  date[11]; /**< Fecha en formato ISO, i.e. "YYYY-MM-DD" */
+  char  cond;     /**< Condición del clima @see WeatherCond */
+  float temp;     /**< Temperatura (*C) */
 } WeatherInfo;
