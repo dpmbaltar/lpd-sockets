@@ -1,3 +1,37 @@
+/**
+ * @file horoscopeserver.c
+ * @author Diego Pablo Matias Baltar (diego.baltar@est.fi.uncoma.edu.ar)
+ * @brief Servidor del horóscopo
+ * @version 0.1
+ * @date 2023-04-04
+ *
+ * Programa del servidor del horóscopo, que recibe consultas por fechas válidas
+ * a partir de la fecha actual, hasta siete días en adelante, y por el signo.
+ * Los datos del horóscopo se guardan en memoria por 1 día. Si se consulta luego
+ * de 1 día generado los datos, se actualizan.
+ *
+ * A continuación se detallan las opciones por parámetros que toma el servidor,
+ * que también puede verse al ejecutar el programa con el parámetro -h o --help:
+ *
+ * @code{.unparsed}
+ * ./horoscope_server --help
+ * @endcode
+ *
+ * Resultado:
+ *
+ * @code{.unparsed}
+ * Uso:
+ *   horoscope_server [OPTION?] - Servidor del horóscopo
+ *
+ * Opciones de ayuda:
+ *   -h, --help             Muestra opciones de ayuda
+ *
+ * Opciones de aplicación:
+ *   -a, --addr=A           Direccion A (0 = INADDR_ANY por defecto)
+ *   -p, --port=P           Puerto P > 1024 del servidor (24002 por defecto)
+ *   -f, --horos-file=F     Archivo de datos del horóscopo
+ * @endcode
+ */
 #include <glib.h>
 #include <glib-object.h>
 #include <json-glib/json-glib.h>
@@ -24,28 +58,28 @@
 #include "types.h"
 #include "util.h"
 
-/* Nombre del servidor */
+/** Nombre del servidor */
 #define SRV_NAME     "Servidor del horóscopo"
-/* Descripción del programa */
+/** Descripción del programa */
 #define SRV_INFO     "- Servidor del horóscopo"
-/* Dirección del servidor por defecto */
+/** Dirección del servidor por defecto */
 #define SRV_ADDR     INADDR_ANY
-/* Puerto del servidor por defecto */
+/** Puerto del servidor por defecto */
 #define SRV_PORT     24002
-/* Cantidad máxima para envío de bytes */
-#define SRV_SEND_MAX 1024
-/* Cantidad máxima para recepción de bytes */
-#define SRV_RECV_MAX 256
-/* TTL para datos del horóscopo (segundos) */
+/** Cantidad máxima para envío de bytes */
+#define SRV_SEND_MAX 1023
+/** Cantidad máxima para recepción de bytes */
+#define SRV_RECV_MAX 255
+/** TTL para datos del horóscopo (segundos) */
 #define SRV_DATA_TTL 86400
 
-/* Mímino de días para el horóscopo, a partir de la fecha actual */
+/** Mímino de días para el horóscopo, a partir de la fecha actual */
 #define H_MIN_DAYS 0
-/* Máximo de días para el horóscopo, a partir de la fecha actual */
+/** Máximo de días para el horóscopo, a partir de la fecha actual */
 #define H_MAX_DAYS 7
-/* Máximo de información para el horóscopo (i.e. mood_len/mood de AstroInfo) */
-#define H_MOOD_MAX 256
-/* Archivo de datos del horóscopo */
+/** Máximo de información para el horóscopo @see AstroInfo::mood */
+#define H_MOOD_MAX 255
+/** Archivo de datos del horóscopo */
 #define H_FILENAME "horoscope.txt"
 
 /* Dirección del servidor */
@@ -60,9 +94,9 @@ static char *horoscope_file = NULL;
 /* Opciones de línea de comandos */
 static GOptionEntry options[] =
 {
-  { "addr", 'a', 0, G_OPTION_ARG_INT, &addr, "Direccion (0=INADDR_ANY)", "A" },
-  { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Puerto (>1024)", "P" },
-  { "horoscope-file", 'f', 0, G_OPTION_ARG_FILENAME, &horoscope_file, "Archivo de datos del horóscopo", "F"},
+  { "addr", 'a', 0, G_OPTION_ARG_INT, &addr, "Direccion A (0 = INADDR_ANY por defecto)", "A" },
+  { "port", 'p', 0, G_OPTION_ARG_INT, &port, "Puerto P > 1024 del servidor (24002 por defecto)", "P" },
+  { "horos-file", 'f', 0, G_OPTION_ARG_FILENAME, &horoscope_file, "Archivo de datos del horóscopo", "F"},
   { NULL }
 };
 
