@@ -109,7 +109,7 @@ static void print_json(const char *data)
   }
 }
 
-static void *client_func(int sockfd, gpointer data)
+static void *client_func(int sockfd, void *data)
 {
   g_return_val_if_fail(sockfd != -1, NULL);
   g_return_val_if_fail(data != NULL, NULL);
