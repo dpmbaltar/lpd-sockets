@@ -15,30 +15,30 @@
  * @startuml{server.png} "Diagrama de Secuencia"
  * actor "Usuario"
  * participant "Cliente"
- * participant "Servidor Principal" as SP
- * participant "Servidor Clima" as SC
+ * participant "Servidor Central" as SC
+ * participant "Servidor Pronóstico" as SP
  * participant "Servidor Horóscopo" as SH
  *
  * Usuario -> Cliente : fecha, signo
  * activate Cliente
  *
- * Cliente ->(10) SP : {fecha, signo}
- * activate SP
+ * Cliente ->(10) SC : {fecha, signo}
+ * activate SC
  *
  * par
- *   SP ->(10) SC : {fecha, signo}
- *   activate SC
- *   SC -->(10) SP : {clima}
- *   deactivate SC
+ *   SC ->(10) SP : {fecha, signo}
+ *   activate SP
+ *   SP -->(10) SC : {clima}
+ *   deactivate SP
  * else
- *   SP ->(20) SH : {fecha, signo}
+ *   SC ->(20) SH : {fecha, signo}
  *   activate SH
- *   SH -->(20) SP : {horóscopo}
+ *   SH -->(20) SC : {horóscopo}
  *   deactivate SH
  * end
  *
- * SP -->(10) Cliente : {clima,horóscopo}
- * deactivate SP
+ * SC -->(10) Cliente : {clima,horóscopo}
+ * deactivate SC
  *
  * Cliente --> Usuario : {clima,horóscopo}
  * deactivate Cliente
