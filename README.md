@@ -39,6 +39,7 @@ Para compilar y ejecutar:
         2. Servidor del clima: `build/src/weather_server`
         3. Servidor del horóscopo: `build/src/horoscope_server`
         4. Cliente: `build/src/client`
+    - Pueden ser ejecutados en cualquier orden.
 
 Cada programa acepta opciones y se muestran al ejecutarlo con la opción `-h`. Por ejemplo: `build/src/server -h`.
 Aunque tienen valores por defecto, el servidor del horóscopo debe ser lanzado desde la **carpeta raíz** con:
@@ -50,7 +51,8 @@ build/src/horoscope_server -f src/horoscope.txt
 ### Windows
 
 Descargar e instalar [MSYS2](https://www.msys2.org/). Una vez instalado abrir el entorno `MSYS2 UCRT64` desde el inicio.
-Para instalar paquetes de desarrollo ejecutar:
+
+Para instalar paquetes de desarrollo y dependencias ejecutar:
 
 ```
 pacman -S git mingw-w64-ucrt-x86_64-toolchain \
@@ -75,13 +77,21 @@ Para compilar y ejecutar:
         2. Servidor del clima: `build/src/weather_server.exe`
         3. Servidor del horóscopo: `build/src/horoscope_server.exe`
         4. Cliente: `build/src/client.exe`
+    - Pueden ser ejecutados en cualquier orden.
+
+Cada programa acepta opciones y se muestran al ejecutarlo con la opción `-h`. Por ejemplo: `build/src/server.exe -h`.
+Aunque tienen valores por defecto, el servidor del horóscopo debe ser lanzado desde la **carpeta raíz** con:
+
+```
+build/src/horoscope_server.exe -f src/horoscope.txt
+```
 
 ## Documentación
 
 Para generar documentación HTML:
 
 1. Descargar [PlantUML](https://github.com/plantuml/plantuml/releases/download/v1.2023.5/plantuml.jar) y colocar el archivo `plantuml.jar` en la carpeta `doc` del proyecto.
-2. Abrir una terminal o entorno MSYS2 UCRT64.
+2. Abrir una terminal o entorno `MSYS2 UCRT64`.
 3. Cambiar a la carpeta `doc` del proyecto y ejecutar `doxygen`.
     - Se genera la documentación HTML en `doc/html`.
     - Navegar a `doc/html/index.html` desde un explorador web.
