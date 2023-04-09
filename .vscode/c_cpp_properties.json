@@ -13,22 +13,22 @@
       "cStandard": "c17",
       "cppStandard": "c++14",
       "intelliSenseMode": "linux-gcc-x64",
-      "compileCommands": "${workspaceFolder}/builddir/compile_commands.json"
+      "compileCommands": "${workspaceFolder}/build/compile_commands.json"
     },
     {
       "name": "Win32",
       "includePath": [
         "${workspaceFolder}/**",
-        "F:/msys64/ucrt64/include",
-        "F:/msys64/ucrt64/include/glib-2.0",
-        "F:/msys64/ucrt64/lib/glib-2.0/include"
+        "C:/msys64/ucrt64/include",
+        "C:/msys64/ucrt64/include/glib-2.0",
+        "C:/msys64/ucrt64/lib/glib-2.0/include"
       ],
       "defines": [],
-      "compilerPath": "F:/msys64/ucrt64/bin/gcc.exe",
+      "compilerPath": "C:/msys64/ucrt64/bin/gcc.exe",
       "cStandard": "c17",
       "cppStandard": "c++14",
       "intelliSenseMode": "linux-gcc-x64",
-      "compileCommands": "${workspaceFolder}/builddir/compile_commands.json"
+      "compileCommands": "${workspaceFolder}/build/compile_commands.json"
     }
   ],
   "version": 4
