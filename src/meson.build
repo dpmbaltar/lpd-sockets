@@ -23,14 +23,9 @@ hosroscope_server_sources = [
   'util.c',
 ]
 
-executable('client', client_sources)
-executable('server', server_sources)
-executable('weather_server', weather_server_sources)
-executable('horoscope_server', hosroscope_server_sources)
+deps = [gio, glib, json_glib]
 
-run_command(
-  find_program(join_paths(buildaux, 'meson', 'copy.rb')),
-  'horoscope.txt',
-  'horoscope.txt',
-  check: true
-)
+executable('client', client_sources, dependencies: deps)
+executable('server', server_sources, dependencies: deps)
+executable('weather_server', weather_server_sources, dependencies: deps)
+executable('horoscope_server', hosroscope_server_sources, dependencies: deps)
