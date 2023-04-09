@@ -8,8 +8,34 @@
       "name": "(gdb) Iniciar servidor del clima",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/builddir/src/weather_server",
+      "program": "${workspaceFolder}/build/src/weather_server",
       "args": [],
+      "stopAtEntry": false,
+      "cwd": "${fileDirname}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "setupCommands": [
+        {
+          "description": "Habilitar la impresión con sangría para gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        },
+        {
+          "description": "Establecer tipo de desensamblado en Intel",
+          "text": "-gdb-set disassembly-flavor intel",
+          "ignoreFailures": true
+        }
+      ]
+    },
+    {
+      "name": "(gdb) Iniciar servidor del horóscopo",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/src/horoscope_server",
+      "args": [
+        "--horos-file=../src/horoscope.txt"
+      ],
       "stopAtEntry": false,
       "cwd": "${fileDirname}",
       "environment": [],
@@ -32,7 +58,7 @@
       "name": "(gdb) Iniciar servidor",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/builddir/src/server",
+      "program": "${workspaceFolder}/build/src/server",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${fileDirname}",
@@ -56,7 +82,7 @@
       "name": "(gdb) Iniciar cliente",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/builddir/src/client",
+      "program": "${workspaceFolder}/build/src/client",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${fileDirname}",
