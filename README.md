@@ -16,7 +16,7 @@ Para instalar dependencias en Ubuntu o derivados:
 
 ```
 sudo apt update
-sudo apt install git build-essential python3 meson cmake libglib2.0-dev libjson-glib-dev libjson-glib-1.0-0 doxygen
+sudo apt install git build-essential python3 meson cmake pkg-config libglib2.0-dev libjson-glib-dev libjson-glib-1.0-0 doxygen
 ```
 
 Para instalar dependencias en Arch Linux o derivados:
