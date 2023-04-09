@@ -166,7 +166,7 @@ static int main_loop()
     read_line(date_arg, sizeof(date_arg));
     printf("Escribir signo:\n");
     read_line(sign_arg, sizeof(sign_arg));
-    sprintf(send_buf, "{\"date\":\"%s\",\"sign\":\"%s\"}", date_arg, sign_arg);
+    sprintf(send_buf, "{\"fecha\":\"%s\",\"signo\":\"%s\"}", date_arg, sign_arg);
 
     /* Ejecutar función del cliente en un nuevo hilo */
     client_thread = tcp_client_run(client, client_func, send_buf, &error);

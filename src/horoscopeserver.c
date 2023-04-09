@@ -220,8 +220,8 @@ static void get_client_args(const char *data, int *arg_day, int *arg_sign)
 
   json_node = parse_json(data, strlen(data), json_parser);
   json_object = json_node_get_object(json_node);
-  sign_str = json_object_get_string_member(json_object, "sign");
-  date_str = json_object_get_string_member(json_object, "date");
+  sign_str = json_object_get_string_member(json_object, "signo");
+  date_str = json_object_get_string_member(json_object, "fecha");
 
   if (sign_str != NULL)
     sign = parse_sign(sign_str);
@@ -247,7 +247,7 @@ static char *astro_to_json(AstroInfo *astro_info)
 {
   g_return_val_if_fail(astro_info != NULL, NULL);
 
-  return g_strdup_printf("{\"signo\":\"%s\",\"compat\":\"%s\",\"periodo\":[\"%s\",\"%s\"],\"estado\":\"%s\"}",
+  return g_strdup_printf("{\"signo\":\"%s\",\"compatible\":\"%s\",\"periodo\":[\"%s\",\"%s\"],\"estado\":\"%s\"}",
                          astro_signs[astro_info->sign],
                          astro_signs[astro_info->sign_compat],
                          astro_info->date_range[0],

@@ -172,7 +172,7 @@ static void get_client_args(const char *data, int *arg_day)
 
   json_node = parse_json(data, strlen(data), json_parser);
   json_object = json_node_get_object(json_node);
-  date_str = json_object_get_string_member(json_object, "date");
+  date_str = json_object_get_string_member(json_object, "fecha");
   date = parse_date(date_str);
 
   if (date != NULL) {
@@ -192,7 +192,7 @@ static char *weather_to_json(WeatherInfo *weather_info)
 {
   g_return_val_if_fail(weather_info != NULL, NULL);
 
-  return g_strdup_printf("{\"fecha\":\"%s\",\"temp\":%.1f,\"cond\":\"%s\"}",
+  return g_strdup_printf("{\"fecha\":\"%s\",\"temperatura\":%.1f,\"condicion\":\"%s\"}",
                          weather_info->date,
                          weather_info->temp,
                          conditions[(int)weather_info->cond]);
