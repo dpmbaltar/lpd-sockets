@@ -213,8 +213,6 @@ static void serve(int connfd, void *data)
   recv_len = recv(connfd, recv_buf, SRV_RECV_MAX, 0);
   if (recv_len > 0) {
     printf("Mensaje recibido:\n%s\n", recv_buf);
-    printf("Bytes recibidos:\n");
-    printx_bytes(recv_buf, recv_len);
 
     /* Solicitar datos del clima */
     printf("Enviando mensaje al servidor del clima...\n");

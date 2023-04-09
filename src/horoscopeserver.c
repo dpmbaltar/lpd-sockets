@@ -271,8 +271,6 @@ static void serve_horoscope(int connfd, void *data)
   /* Leer solicitud del cliente */
   recv(connfd, recv_buff, SRV_RECV_MAX, 0);
   printf("Mensaje recibido:\n%s\n", recv_buff);
-  printf("Bytes recibidos:\n");
-  printx_bytes(recv_buff, strlen(recv_buff));
 
   /* Analizar datos recibidos */
   get_client_args(recv_buff, &arg_day, &arg_sign);
@@ -298,8 +296,6 @@ static void serve_horoscope(int connfd, void *data)
   /* Enviar datos al cliente */
   send(connfd, send_buff, send_len, 0);
   printf("Mensaje enviado:\n%s\n", send_buff);
-  printf("Bytes enviados (%d):\n", send_len);
-  printx_bytes(send_buff, send_len);
 }
 
 int main(int argc, char **argv)

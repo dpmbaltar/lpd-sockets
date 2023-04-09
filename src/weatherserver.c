@@ -213,8 +213,6 @@ static void serve_weather(int connfd, void *data)
   /* Leer solicitud del cliente */
   recv(connfd, recv_buff, SRV_RECV_MAX, 0);
   printf("Mensaje recibido:\n%s\n", recv_buff);
-  printf("Bytes recibidos:\n");
-  printx_bytes(recv_buff, strlen(recv_buff));
 
   /* Analizar datos recibidos */
   get_client_args(recv_buff, &arg_day);
@@ -238,8 +236,6 @@ static void serve_weather(int connfd, void *data)
   /* Enviar datos al cliente */
   send(connfd, send_buff, send_len, 0);
   printf("Mensaje enviado:\n%s\n", send_buff);
-  printf("Bytes enviados:\n");
-  printx_bytes(send_buff, send_len);
 }
 
 int main(int argc, char **argv)
