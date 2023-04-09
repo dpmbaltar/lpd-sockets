@@ -31,14 +31,14 @@ Para compilar y ejecutar:
 2. Clonar el repositorio con `git clone https://github.com/dpmbaltar/lpd-sockets.git`.
 3. Cambiar a la **carpeta raíz del proyecto** con `cd lpd-sockets`.
 4. Ejecutar `meson setup build` para configurar el proceso de compilación.
-  - Este paso se realiza una sola vez, a menos que se borre la carpeta generada `build`.
-  - Si se cambia algún archivo `meson.build` entonces ejecutar `meson setup build --reconfigure`.
+    - Este paso se realiza una sola vez, a menos que se borre la carpeta generada `build`.
+    - Si se cambia algún archivo `meson.build` entonces ejecutar `meson setup build --reconfigure`.
 5. Ejecutar `meson compile -C build` para compilar los programas.
-  - Se generan 4 ejecutables:
-    1. Servidor central: `build/src/server`
-    2. Servidor del clima: `build/src/weather_server`
-    3. Servidor del horóscopo: `build/src/horoscope_server`
-    4. Cliente: `build/src/client`
+    - Se generan 4 ejecutables:
+        1. Servidor central: `build/src/server`
+        2. Servidor del clima: `build/src/weather_server`
+        3. Servidor del horóscopo: `build/src/horoscope_server`
+        4. Cliente: `build/src/client`
 
 Cada programa acepta opciones y se muestran al ejecutarlo con la opción `-h`. Por ejemplo: `build/src/server -h`.
 Aunque tienen valores por defecto, el servidor del horóscopo debe ser lanzado desde la **carpeta raíz** con:
@@ -67,14 +67,14 @@ Para compilar y ejecutar:
 2. Clonar el repositorio con `git clone https://github.com/dpmbaltar/lpd-sockets.git`.
 3. Cambiar a la **carpeta raíz del proyecto** con `cd lpd-sockets`.
 4. Ejecutar `meson setup build --cross-file mingw-w64-ucrt-x86_64.ini` para configurar el proceso de compilación.
-  - Este paso se realiza una sola vez, a menos que se borre la carpeta generada `build`.
-  - Si se cambia algún archivo `meson.build` entonces ejecutar `meson setup build --cross-file mingw-w64-ucrt-x86_64.ini --reconfigure`.
+    - Este paso se realiza una sola vez, a menos que se borre la carpeta generada `build`.
+    - Si se cambia algún archivo `meson.build` entonces ejecutar `meson setup build --cross-file mingw-w64-ucrt-x86_64.ini --reconfigure`.
 5. Ejecutar `meson compile -C build` para compilar los programas.
-  - Se generan 4 ejecutables:
-    1. Servidor central: `build/src/server.exe`
-    2. Servidor del clima: `build/src/weather_server.exe`
-    3. Servidor del horóscopo: `build/src/horoscope_server.exe`
-    4. Cliente: `build/src/client.exe`
+    - Se generan 4 ejecutables:
+        1. Servidor central: `build/src/server.exe`
+        2. Servidor del clima: `build/src/weather_server.exe`
+        3. Servidor del horóscopo: `build/src/horoscope_server.exe`
+        4. Cliente: `build/src/client.exe`
 
 ## Documentación
 
@@ -83,18 +83,18 @@ Para generar documentación HTML:
 1. Descargar [PlantUML](https://github.com/plantuml/plantuml/releases/download/v1.2023.5/plantuml.jar) y colocar el archivo `plantuml.jar` en la carpeta `doc` del proyecto.
 2. Abrir una terminal o entorno MSYS2 UCRT64.
 3. Cambiar a la carpeta `doc` del proyecto y ejecutar `doxygen`.
-  - Se genera la documentación HTML en `doc/html`.
-  - Navegar a `doc/html/index.html` desde un explorador web.
+    - Se genera la documentación HTML en `doc/html`.
+    - Navegar a `doc/html/index.html` desde un explorador web.
 
 ## Extensiones en VSCode (Opcional)
 
 1. En la pestaña de la extensión Meson se muestran "Targets" para compilar los ejecutables por separado, por ejemplo:
-  - lpd-sockets 0.1.0
-    - Targets
-      - client
-      - server
-      - weather_server
-      - horoscope_server
+    - lpd-sockets 0.1.0
+        - Targets
+            - client
+            - server
+            - weather_server
+            - horoscope_server
 2. En la pestaña de ejecución y depuración, están definidas las opciones:
 - (gdb) Iniciar servidor del clima
 - (gdb) Iniciar servidor del horóscopo
