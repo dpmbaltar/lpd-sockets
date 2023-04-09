@@ -48,7 +48,7 @@ static const char *error_messages[] = {
 /* Macro para manejar errores */
 #define return_set_error_if(cond, error, code) \
   if (cond) {\
-    g_set_error(error, TCP_CLIENT_ERROR, code, error_messages[code]);\
+    g_set_error_literal(error, TCP_CLIENT_ERROR, code, error_messages[code]);\
     return NULL;\
   }
 
